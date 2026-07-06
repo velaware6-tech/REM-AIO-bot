@@ -141,6 +141,8 @@ class Automod(commands.Cog):
     @blacklist_check()
     @ignore_check()
     @commands.cooldown(1, 4, commands.BucketType.user)
+    @commands.guild_only()
+    @security_manager_check()
     async def automod(self, ctx):
         if ctx.subcommand_passed is None:
             await ctx.send_help(ctx.command)
@@ -400,6 +402,8 @@ class Automod(commands.Cog):
     @blacklist_check()
     @ignore_check()
     @commands.cooldown(1, 4, commands.BucketType.user)
+    @commands.guild_only()
+    @security_manager_check()
     async def ignore(self, ctx):
         if ctx.subcommand_passed is None:
             await ctx.send_help(ctx.command)
@@ -645,6 +649,8 @@ class Automod(commands.Cog):
     @blacklist_check()
     @ignore_check()
     @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.guild_only()
+    @security_manager_check()
     async def unignore(self, ctx):
         if ctx.subcommand_passed is None:
             await ctx.send_help(ctx.command)

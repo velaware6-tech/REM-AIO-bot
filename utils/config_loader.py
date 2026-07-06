@@ -2,9 +2,30 @@ import yaml
 import json
 import os
 
-# Config load
-with open('config.yml', 'r', encoding='utf-8') as config_file:
-    config = yaml.safe_load(config_file)
+DEFAULT_CONFIG = {
+    "LANGUAGE": "en",
+    "INTERNET_ACCESS": False,
+    "API_BASE_URL": "https://api.openai.com/v1",
+    "MODEL_ID": "gpt-4o-mini",
+}
+
+
+def _env_bool(name: str, default: bool) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+config = DEFAULT_CONFIG.copy()
+if os.path.exists("config.yml"):
+    with open("config.yml", "r", encoding="utf-8") as config_file:
+        config.update(yaml.safe_load(config_file) or {})
+
+config["LANGUAGE"] = os.getenv("LANGUAGE", str(config["LANGUAGE"]))
+config["INTERNET_ACCESS"] = _env_bool("INTERNET_ACCESS", bool(config["INTERNET_ACCESS"]))
+config["API_BASE_URL"] = os.getenv("API_BASE_URL", str(config["API_BASE_URL"]))
+config["MODEL_ID"] = os.getenv("MODEL_ID", str(config["MODEL_ID"]))
 
 ## Language settings ##
 valid_language_codes = []

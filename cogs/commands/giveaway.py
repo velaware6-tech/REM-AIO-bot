@@ -154,6 +154,8 @@ class Giveaway(commands.Cog):
     @blacklist_check()
     @ignore_check()
     @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.guild_only()
+    @security_manager_check()
     @commands.has_guild_permissions(manage_guild=True)
     async def gstart(self, ctx,
                       time,
@@ -252,6 +254,8 @@ class Giveaway(commands.Cog):
     @blacklist_check()
     @ignore_check()
     @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.guild_only()
+    @security_manager_check()
     @commands.has_guild_permissions(manage_guild=True)
     async def gend(self, ctx, message_id = None):
         if message_id:
@@ -355,6 +359,8 @@ class Giveaway(commands.Cog):
     @blacklist_check()
     @ignore_check()
     @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.guild_only()
+    @security_manager_check()
     @commands.has_guild_permissions(manage_guild=True)
     async def greroll(self, ctx, message_id: typing.Optional[int] = None):
         if not ctx.message.reference:
@@ -419,6 +425,8 @@ class Giveaway(commands.Cog):
     @blacklist_check()
     @ignore_check()
     @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.guild_only()
+    @security_manager_check()
     @commands.has_guild_permissions(manage_guild=True)
     async def glist(self, ctx):
         await self.cursor.execute("SELECT prize, ends_at, winners, message_id FROM Giveaway WHERE guild_id = ?", (ctx.guild.id,))

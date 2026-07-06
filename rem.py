@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from flask import Flask
 
 from core.axon import axon
+from utils.config import COMMAND_LOG_IGNORE_IDS
 
 load_dotenv()
 
@@ -53,7 +54,7 @@ async def on_ready():
 
 @client.event
 async def on_command_completion(context: commands.Context) -> None:
-    if not COMMAND_LOG_WEBHOOK_URL or context.author.id == 767979794411028491:
+    if not COMMAND_LOG_WEBHOOK_URL or context.author.id in COMMAND_LOG_IGNORE_IDS:
         return
 
     full_command_name = context.command.qualified_name

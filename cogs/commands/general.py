@@ -194,13 +194,15 @@ class General(commands.Cog):
 
 
 
-        embed = discord.Embed(title="Member Statistics",
-                              color=0x000000)
-        embed.add_field(name="__Count Stats:__",
-                        value=f"Total Members: {total_members}\nTotal Humans: {total_humans}\n Total Bots: {total_bots}",
-                        inline=False)
-
-        embed.add_field(name="__Presence Stats:__", value=f" Online: {online}\n Dnd: {dnd}\n Idle: {idle}\n Offline: {offline}", inline=False)
+        embed = discord.Embed(
+          title="Members",
+          description=(
+            f"**Total:** `{total_members}`\n"
+            f"**Humans:** `{total_humans}` | **Bots:** `{total_bots}`\n"
+            f"**Online:** `{online}` | **Idle:** `{idle}` | **DND:** `{dnd}` | **Offline:** `{offline}`"
+          ),
+          color=0x000000
+        )
 
         await ctx.send(view = embed_to_view(embed))
 
@@ -435,10 +437,11 @@ class General(commands.Cog):
   @ignore_check()
   @commands.cooldown(1, 3, commands.BucketType.user)
   async def invite(self, ctx: commands.Context):
-    embed = discord.Embed(title="REM ALL IN ONE BOT Invite & Support!",
-      description=
-      f"> {emojis.ICONS_PLUS} **[REM ALL IN ONE BOT - Invite Bot](https://discord.com/oauth2/authorize?client_id=1313160406117646417&permissions=8&integration_type=0&scope=bot+applications.commands)**\n> {emojis.ICONS_PLUS} **[REM ALL IN ONE BOT - Support](https://discord.gg/codexdev)**",
-      color=0x0ba7ff)
+    embed = discord.Embed(
+      title="Invite",
+      description="Add REM ALL IN ONE BOT or join support.",
+      color=0x0ba7ff
+    )
 
     embed.set_footer(text=f"Requested by {ctx.author.name}",
                      icon_url=ctx.author.avatar.url if ctx.author.avatar else ctx.author.default_avatar.url)
@@ -456,4 +459,3 @@ class General(commands.Cog):
     view.add_item(support)
     
     await ctx.send(view = embed_to_view(embed, view = view))
-

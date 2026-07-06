@@ -19,7 +19,7 @@ internet_access = config['INTERNET_ACCESS']
 
 client = AsyncOpenAI(
     base_url=config['API_BASE_URL'],
-    api_key="nah-ha",
+    api_key=os.getenv("OPENAI_API_KEY") or os.getenv("AI_API_KEY") or "missing-api-key",
 )
 
 async def generate_response(instructions, history):
@@ -85,7 +85,7 @@ async def generate_response(instructions, history):
     return response_message.content
 
 async def duckduckgotool(query) -> str:
-    if config['INTERNET_ACCESS']:
+    if not config['INTERNET_ACCESS']:
         return "internet access has been disabled by user"
     blob = ''
     results = await AsyncDDGS(proxy=None).text(query, max_results=6)

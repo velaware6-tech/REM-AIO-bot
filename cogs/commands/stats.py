@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime
 import os
-import platform
 import time
 
 import aiosqlite
@@ -117,7 +116,6 @@ class Stats(commands.Cog):
         all_channels = list(self.bot.get_all_channels())
         text_channel_count = sum(isinstance(c, discord.TextChannel) for c in all_channels)
         voice_channel_count = sum(isinstance(c, discord.VoiceChannel) for c in all_channels)
-        category_channel_count = sum(isinstance(c, discord.CategoryChannel) for c in all_channels)
         channel_count = len(all_channels)
 
         slash_commands = len(self.bot.tree.get_commands())
@@ -130,15 +128,12 @@ class Stats(commands.Cog):
             self._code_stats = self.gather_file_stats(".")
         total_files, total_lines, total_words = self._code_stats
 
-        cpu_info = psutil.cpu_freq()
         memory_info = psutil.virtual_memory()
         channels_connected = len(self.bot.voice_clients)
         playing_tracks = sum(1 for vc in self.bot.voice_clients if getattr(vc, "playing", False))
 
         shard_id = ctx.guild.shard_id if ctx.guild else 0
-        shard = self.bot.get_shard(shard_id)
         websocket_latency = round(self.bot.latency * 1000, 2)
-        shard_latency = round((shard.latency if shard else self.bot.latency) * 1000, 2)
 
         db_latency = "N/A"
         try:
@@ -149,42 +144,27 @@ class Stats(commands.Cog):
         except Exception:
             pass
 
-        embed = Embed(title="REM ALL IN ONE BOT Statistics")
-        embed.add_field(name="Servers", value=f"Total Servers: **{guild_count}**", inline=False)
-        embed.add_field(
-            name="Channels",
-            value=(
-                f"Total: **{channel_count}**\n"
-                f"Text: **{text_channel_count}** | Voice: **{voice_channel_count}** | "
-                f"Categories: **{category_channel_count}**"
+        embed = Embed(
+            title="REM ALL IN ONE BOT",
+            description=(
+                f"**Servers:** `{guild_count}`\n"
+                f"**Users:** `{total_users}` total, `{human_count}` humans, `{bot_count}` bots\n"
+                f"**Channels:** `{channel_count}` total, `{text_channel_count}` text, `{voice_channel_count}` voice\n"
+                f"**Commands:** `{commands_count}` prefix, `{slash_commands}` slash\n"
+                f"**Music:** `{channels_connected}` connected, `{playing_tracks}` playing, `{self.total_songs_played}` songs\n"
+                f"**Uptime:** `{uptime}`\n"
+                f"**Latency:** `{websocket_latency} ms` ws, `{db_latency}` db"
             ),
-            inline=False,
         )
-        embed.add_field(name=f"{emojis.ICON_PING} Uptime", value=uptime, inline=False)
-        embed.add_field(name=f"{emojis.USER} Users", value=f"Humans: **{human_count}** | Bots: **{bot_count}** | Total: **{total_users}**", inline=False)
-        embed.add_field(name=f"{emojis.FILE} Commands", value=f"Prefix: **{commands_count}** | Slash: **{slash_commands}**", inline=False)
-        embed.add_field(name=f"{emojis.ICONS_DISCORDBOTDEV} Codebase", value=f"Python Files: **{total_files}**\nLines: **{total_lines}**\nWords: **{total_words}**", inline=False)
-        embed.add_field(name=f"{emojis.ICONS_MUSIC} Music", value=f"Connected: **{channels_connected}**\nPlaying: **{playing_tracks}**\nSongs Played: **{self.total_songs_played}**", inline=False)
         embed.add_field(
             name="System",
             value=(
-                f"discord.py: **{discord.__version__}**\n"
-                f"Python: **{platform.python_version()}**\n"
-                f"Platform: **{platform.system()} {platform.machine()}**"
+                f"CPU `{psutil.cpu_percent()}%`"
+                f" | RAM `{memory_info.used / (1024 ** 2):,.0f} MB`"
+                f" | Code `{total_files}` files / `{total_lines}` lines"
             ),
             inline=False,
         )
-        embed.add_field(
-            name="Memory / CPU",
-            value=(
-                f"Memory Used: **{memory_info.used / (1024 ** 2):,.2f} MB**\n"
-                f"Memory Available: **{memory_info.available / (1024 ** 2):,.2f} MB**\n"
-                f"CPU Usage: **{psutil.cpu_percent()}%**\n"
-                f"CPU Speed: **{(cpu_info.current if cpu_info else 0):.2f} MHz**"
-            ),
-            inline=False,
-        )
-        embed.add_field(name="Latency", value=f"Shard: **{shard_latency} ms**\nWebsocket: **{websocket_latency} ms**\nDatabase: **{db_latency}**", inline=False)
         if self.bot.user:
             embed.set_footer(text="Powered by REM ALL IN ONE BOT", icon_url=self.bot.user.display_avatar.url)
 

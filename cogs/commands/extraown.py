@@ -6,6 +6,7 @@ from discord.ext import commands
 from discord.ui import View, Button
 import aiosqlite
 from utils.Tools import *
+from utils.config import BYPASS_IDS
 from utils.cv2_compat import embed_to_view, embeds_to_view
 
 class Extraowner(commands.Cog):
@@ -29,6 +30,7 @@ class Extraowner(commands.Cog):
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     @commands.guild_only()
+    @security_manager_check()
     async def extraowner(self, ctx, option: str = None, user: discord.Member = None):
         guild_id = ctx.guild.id
 
@@ -40,8 +42,7 @@ class Extraowner(commands.Cog):
             await ctx.send(view = embed_to_view(embed))
             return
 
-        REM_BYPASS_IDS = ['767979794411028491', '767979794411028491']
-        if ctx.author.id != ctx.guild.owner_id and str(ctx.author.id) not in REM_BYPASS_IDS:
+        if ctx.author.id != ctx.guild.owner_id and ctx.author.id not in BYPASS_IDS:
             embed = discord.Embed(title="Access Denied",
                                   description="Only Server Owner Can Run This Command",
                                   color=0x000000
@@ -169,4 +170,3 @@ class ConfirmView(View):
     async def cancel(self, interaction: discord.Interaction, button: Button):
         self.value = False
         self.stop()
-

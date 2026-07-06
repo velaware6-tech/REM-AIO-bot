@@ -4,6 +4,7 @@ import discord
 from discord.ext import commands
 import aiosqlite
 import asyncio
+from utils.Tools import security_manager_check
 from utils.cv2_compat import embed_to_view, embeds_to_view
 
 class TopCheck(commands.Cog):
@@ -45,6 +46,7 @@ class TopCheck(commands.Cog):
         help="Manage topcheck settings for the server.",
         invoke_without_command=True)
     @commands.guild_only()
+    @security_manager_check()
     async def topcheck(self, ctx):
         embed = discord.Embed(title="Top Check System",
                               description=(
@@ -69,6 +71,8 @@ class TopCheck(commands.Cog):
         name="enable",
         help="Enable topcheck for the guild")
     @commands.guild_only()
+    @commands.has_permissions(administrator=True)
+    @security_manager_check()
     async def topcheck_enable(self, ctx):
         if ctx.author.id != ctx.guild.owner_id:
             return await ctx.reply(f"{emojis.CROSSICON} Only the **Server Owner** can enable topcheck.")
@@ -81,6 +85,8 @@ class TopCheck(commands.Cog):
         name="disable",
         help="Disable topcheck for the guild")
     @commands.guild_only()
+    @commands.has_permissions(administrator=True)
+    @security_manager_check()
     async def topcheck_disable(self, ctx):
         if ctx.author.id != ctx.guild.owner_id:
             return await ctx.reply("Only the **Server Owner** can disable topcheck.")

@@ -213,13 +213,13 @@ class MusicControlView(View):
 
             await self.player.channel.edit(status=f"{emojis.MUSIC} Playing: {self.player.current.title}")
             button.emoji = f"{emojis.MUSICSTOP_ICONS}" 
-            await interaction.response.edit_message(view=self)
+            await interaction.response.edit_message(view=button.view)
 
         elif self.player.playing:
             await self.player.pause(True)
             await self.player.channel.edit(status=f"{emojis.ICONS_PAUSE}  Paused: {self.player.current.title}")
             button.emoji = f"{emojis.ICONS_PAUSE}"
-            await interaction.response.edit_message(view=self)
+            await interaction.response.edit_message(view=button.view)
 
 
     @discord.ui.button(emoji=f"{emojis.SKIP}", style=discord.ButtonStyle.secondary)
@@ -289,6 +289,24 @@ class MusicControlView(View):
         else:
             await interaction.response.send_message("No track is currently playing.", ephemeral=True)
 
+
+
+class MusicPlayerLayoutView(discord.ui.LayoutView):
+    def __init__(self, embed: discord.Embed, controls: MusicControlView):
+        super().__init__(timeout=controls.timeout)
+        self.controls = controls
+
+        panel = embed_to_view(embed)
+        container_children = list(panel.children[0].children)
+        if controls.children:
+            container_children.append(discord.ui.Separator())
+            for index in range(0, len(controls.children), 5):
+                container_children.append(discord.ui.ActionRow(*controls.children[index:index + 5]))
+
+        self.add_item(discord.ui.Container(*container_children))
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        return await self.controls.interaction_check(interaction)
 
 
 class Music(commands.Cog):
@@ -529,58 +547,50 @@ class Music(commands.Cog):
 
 
     async def display_player_embed(self, player, track, ctx, autoplay=False):
-        if track.artwork:
-            template_path = 'data/pictures/player.png'
-            font_path = 'utils/arial.ttf'
-            font = ImageFont.truetype(font_path, 40) 
+        template_path = 'data/pictures/player.png'
+        font_path = 'utils/arial.ttf'
+        base_img = Image.open(template_path).convert("RGBA")
+        draw = ImageDraw.Draw(base_img)
+        width, height = base_img.size
 
-            base_img = Image.open(template_path).convert("RGBA")
+        title_font = ImageFont.truetype(font_path, 31)
+        title_area = (int(width * 0.68), int(height * 0.26), width - 38, int(height * 0.47))
+        draw.rectangle(title_area, fill=(0, 0, 0, 255))
 
-            async with aiohttp.ClientSession() as session:
-                async with session.get(track.artwork) as resp:
-                    if resp.status == 200:
-                        track_img_data = io.BytesIO(await resp.read())
-                        track_img = Image.open(track_img_data).convert("RGBA")
-                        track_img = ImageOps.fit(track_img, (220, 220), centering=(0.5, 0.5))
+        title = track.title
+        max_title_width = title_area[2] - title_area[0]
+        while draw.textlength(title, font=title_font) > max_title_width and len(title) > 4:
+            title = title[:-4].rstrip() + "..."
 
-                        mask = Image.new('L', (220, 220), 0)
-                        draw = ImageDraw.Draw(mask)
-                        draw.ellipse((0, 0, 220, 220), fill=255)
-                        track_img.putalpha(mask)
-                        base_img.paste(track_img, (15, 125 - 85), track_img) 
+        draw.text((title_area[0], title_area[1] + 12), title, font=title_font, fill="white")
 
-            draw = ImageDraw.Draw(base_img)
-            draw.text((240, 50), track.title, font=font, fill="white")
-            draw.rectangle((520, 75, 890, 140), fill=(0, 0, 0, 255))
-            brand_font = ImageFont.truetype(font_path, 28)
-            brand_width = draw.textlength(BOT_DISPLAY_NAME, font=brand_font)
-            draw.text((880 - brand_width, 84), BOT_DISPLAY_NAME, font=brand_font, fill="white")
+        image_bytes = io.BytesIO()
+        base_img.save(image_bytes, format="PNG")
+        image_bytes.seek(0)
 
-            image_bytes = io.BytesIO()
-            base_img.save(image_bytes, format="PNG")
-            image_bytes.seek(0)
+        file = discord.File(image_bytes, filename="player.png")
+        sec = track.length // 1000
+        duration = f"0{sec // 60}:{sec % 60}" if sec < 600 else f"{sec // 60}:{sec % 60}"
+        source = f"{getattr(track, 'source', '')} {getattr(track, 'uri', '')}".lower()
+        embed = discord.Embed(
+            title=f"**{track.title}**",
+            color=0x1DB954 if "spotify" in source else 0x00E6A7 if "jiosaavn" in source else 0xFF0000 if "youtube" in source else 0xFF5500,
+        )
+        embed.add_field(name="Author", value=f"`{track.author}`")
+        embed.add_field(name="Duration", value=f"`{duration}`")
+        embed.add_field(name="Source", value=self.source_link_value(track))
+        embed.set_image(url="attachment://player.png")
+        embed.set_footer(text="Requested by " + (ctx.author.display_name if not autoplay else f"{ctx.author.display_name} (Autoplay Mode)"), icon_url=ctx.author.display_avatar.url)
 
-            file = discord.File(image_bytes, filename="player.png")
-            sec = track.length // 1000
-            duration= f"0{sec // 60}:{sec % 60}" if sec < 600 else f"{sec // 60}:{sec % 60}"
-            source = f"{getattr(track, 'source', '')} {getattr(track, 'uri', '')}".lower()
-            embed = discord.Embed(title=f"**{track.title}**",
-            color=0x1DB954 if "spotify" in source else 0x00E6A7 if "jiosaavn" in source else 0xFF0000 if "youtube" in source else 0xFF5500
-            )
-            #embed.set_author(name="Now Playing", icon_url="https://cdn.discordapp.com/emojis/1275556609958875218.gif")
-            embed.add_field(name="Author", value=f"`{track.author}`")
-            embed.add_field(name="Duration", value=f"`{duration}`")
-            embed.add_field(name="Source", value=self.source_link_value(track))
-            embed.set_image(url="attachment://player.png")
-            embed.set_footer(text="Requested by " + (ctx.author.display_name if not autoplay else f"{ctx.author.display_name} (Autoplay Mode)"), icon_url=ctx.author.display_avatar.url)
-
-            await ctx.send(view = embed_to_view(embed, view = MusicControlView(player, ctx)), file=file)
-        else:
-            await ctx.send(view = embed_to_view(discord.Embed(description="Track has no artwork.")))
+        await ctx.send(view=MusicPlayerLayoutView(embed, MusicControlView(player, ctx)), file=file)
 
 
     async def on_track_end(self, payload: wavelink.TrackEndEventPayload):
         player = payload.player
+        if player is None:
+            return
+
+        ctx = getattr(player, "ctx", None)
         if not player.queue:
             if player.queue.mode == wavelink.QueueMode.loop:
                 await player.play(payload.track)
@@ -592,7 +602,8 @@ class Music(commands.Cog):
                 if player.current:
                     await self.display_player_embed(player, player.current, player.ctx, autoplay=True)
                 else:
-                    await player.ctx.send("No suitable track found for autoplay.")
+                    if ctx:
+                        await ctx.send("No suitable track found for autoplay.")
 
 
             else:
@@ -608,11 +619,13 @@ class Music(commands.Cog):
                 view = View()
                 view.add_item(support)
                 view.add_item(vote)
-                await player.ctx.send(view = embed_to_view(ended, view = view))
+                if ctx:
+                    await ctx.send(view = embed_to_view(ended, view = view))
         else:
             next_track = await player.queue.get_wait()
             await player.play(next_track)
-            await self.display_player_embed(player, next_track, player.ctx)
+            if ctx:
+                await self.display_player_embed(player, next_track, ctx)
 
 
 
@@ -1140,6 +1153,8 @@ class Music(commands.Cog):
     @commands.Cog.listener()
     async def on_wavelink_track_start(self, payload: wavelink.TrackStartEventPayload):
         player = payload.player
+        if player is None or player.current is None:
+            return
         track = player.current
         guild_id = player.guild.id
 
@@ -1160,6 +1175,8 @@ class Music(commands.Cog):
     @commands.Cog.listener()
     async def on_wavelink_track_end(self, payload: wavelink.TrackEndEventPayload):
         player = payload.player
+        if player is None:
+            return
         voice_channel = player.channel
 
         if voice_channel:

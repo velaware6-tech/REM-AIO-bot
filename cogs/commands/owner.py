@@ -161,7 +161,7 @@ class Owner(commands.Cog):
         self.np_cache = []
         self.db_path = 'db/np.db'
         self.stop_tour = False
-        self.bot_owner_ids = [767979794411028491,]
+        self.bot_owner_ids = OWNER_IDS
         asyncio.create_task(self.setup_database())
         asyncio.create_task(self.load_staff())
         

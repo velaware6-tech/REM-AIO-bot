@@ -4,6 +4,7 @@ import json, sys, os
 import discord
 from discord.ext import commands
 import aiosqlite
+from utils.config import BYPASS_IDS
 
 async def setup_db():
   async with aiosqlite.connect('db/prefix.db') as db:
@@ -169,6 +170,50 @@ def ignore_check():
             return False
 
         return True
+
+    return commands.check(predicate)
+
+
+def is_security_manager(member: discord.Member) -> bool:
+    if member.guild is None:
+        return False
+    return (
+        member.id == member.guild.owner_id
+        or member.guild_permissions.administrator
+        or member.id in BYPASS_IDS
+    )
+
+
+def security_manager_check():
+    async def predicate(ctx):
+        return bool(ctx.guild and is_security_manager(ctx.author))
+
+    return commands.check(predicate)
+
+
+def is_moderation_staff(member: discord.Member) -> bool:
+    if member.guild is None:
+        return False
+
+    perms = member.guild_permissions
+    return (
+        is_security_manager(member)
+        or perms.manage_messages
+        or perms.manage_roles
+        or perms.manage_channels
+        or perms.kick_members
+        or perms.ban_members
+        or perms.moderate_members
+        or perms.manage_nicknames
+        or getattr(perms, "manage_emojis_and_stickers", False)
+        or getattr(perms, "manage_emojis", False)
+        or perms.view_audit_log
+    )
+
+
+def moderation_staff_check():
+    async def predicate(ctx):
+        return bool(ctx.guild and is_moderation_staff(ctx.author))
 
     return commands.check(predicate)
 

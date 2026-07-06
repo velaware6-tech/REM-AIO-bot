@@ -8,12 +8,13 @@ from discord.ext import commands
 from discord.ext.commands import errors
 from PIL import Image, ImageFont, ImageDraw
 from utils.Tools import *
+from utils.config import OWNER_IDS
 from utils.cv2_compat import embed_to_view, embeds_to_view
 
 class Ship(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.special_users = [767979794411028491,]
+        self.special_users = OWNER_IDS
 
     @commands.hybrid_command(pass_context=True, help="Ship two users together.")
     @blacklist_check()

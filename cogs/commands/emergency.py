@@ -5,6 +5,7 @@ import discord
 from discord.ext import commands
 import aiosqlite
 from utils.Tools import *
+from utils.config import BYPASS_IDS
 from utils.cv2_compat import embed_to_view, embeds_to_view
 
 class EmergencyRestoreView(discord.ui.View):
@@ -85,6 +86,7 @@ class Emergency(commands.Cog):
     @commands.cooldown(1, 4, commands.BucketType.user)
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     @commands.guild_only()
+    @security_manager_check()
     async def emergency(self, ctx):
         embed = discord.Embed(
             title="__Emergency Situation__",
@@ -106,9 +108,9 @@ class Emergency(commands.Cog):
     @commands.cooldown(1, 4, commands.BucketType.user)
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     @commands.guild_only()
+    @security_manager_check()
     async def enable(self, ctx):
-        REM_BYPASS_IDS = ['767979794411028491', '767979794411028491']
-        if ctx.author.id != ctx.guild.owner_id and str(ctx.author.id) not in REM_BYPASS_IDS:
+        if ctx.author.id != ctx.guild.owner_id and ctx.author.id not in BYPASS_IDS:
             embed = discord.Embed(title=f"{emojis.CROSSICON} Error", description="Only the server owner can enable emergency mode.", color=0x000000)
             return await ctx.reply(view = embed_to_view(embed))
 
@@ -150,9 +152,9 @@ class Emergency(commands.Cog):
     @commands.cooldown(1, 4, commands.BucketType.user)
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     @commands.guild_only()
+    @security_manager_check()
     async def disable(self, ctx):
-        REM_BYPASS_IDS = ['767979794411028491', '767979794411028491']
-        if ctx.author.id != ctx.guild.owner_id and str(ctx.author.id) not in REM_BYPASS_IDS:
+        if ctx.author.id != ctx.guild.owner_id and ctx.author.id not in BYPASS_IDS:
             embed = discord.Embed(title=f"{emojis.CROSSICON} Error", description="Only the server owner can disable emergency mode.", color=0x000000)
             return await ctx.reply(view = embed_to_view(embed))
 
@@ -172,6 +174,7 @@ class Emergency(commands.Cog):
     @commands.cooldown(1, 4, commands.BucketType.user)
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     @commands.guild_only()
+    @security_manager_check()
     async def authorise(self, ctx):
         if ctx.subcommand_passed is None:
             await ctx.send_help(ctx.command)
@@ -183,6 +186,7 @@ class Emergency(commands.Cog):
     @commands.cooldown(1, 4, commands.BucketType.user)
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     @commands.guild_only()
+    @security_manager_check()
     async def authorise_add(self, ctx, member: discord.Member):
         if not await self.is_guild_owner(ctx):
             embed = discord.Embed(title=f"{emojis.CROSSICON} Error", description="Only the server owner can add authorised users for executing emergency situation.", color=0x000000)
@@ -212,6 +216,7 @@ class Emergency(commands.Cog):
     @commands.cooldown(1, 4, commands.BucketType.user)
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     @commands.guild_only()
+    @security_manager_check()
     async def authorise_remove(self, ctx, member: discord.Member):
         if not await self.is_guild_owner(ctx):
             embed = discord.Embed(title=f"{emojis.ICONS_WARNING} Access Denied", description="Only the server owner can remove authorised users for emergency situation.", color=0x000000)
@@ -235,6 +240,7 @@ class Emergency(commands.Cog):
     @commands.cooldown(1, 4, commands.BucketType.user)
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     @commands.guild_only()
+    @security_manager_check()
     async def list_authorized(self, ctx):
         if not await self.is_guild_owner(ctx):
             embed = discord.Embed(title=f"{emojis.ICONS_WARNING} Access Denied", description="Only the server owner can view the list of authorised users for emergency situation.", color=0x000000)
@@ -264,6 +270,7 @@ class Emergency(commands.Cog):
     @commands.cooldown(1, 4, commands.BucketType.user)
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     @commands.guild_only()
+    @security_manager_check()
     async def role(self, ctx):
         if ctx.subcommand_passed is None:
             await ctx.send_help(ctx.command)
@@ -275,6 +282,7 @@ class Emergency(commands.Cog):
     @commands.cooldown(1, 4, commands.BucketType.user)
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     @commands.guild_only()
+    @security_manager_check()
     async def role_add(self, ctx, role: discord.Role):
         if not await self.is_guild_owner(ctx):
             embed = discord.Embed(title=f"{emojis.ICONS_WARNING} Access Denied", description="Only the server owner can add role for emergency situation.", color=0x000000)
@@ -305,6 +313,7 @@ class Emergency(commands.Cog):
     @commands.cooldown(1, 4, commands.BucketType.user)
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     @commands.guild_only()
+    @security_manager_check()
     async def role_remove(self, ctx, role: discord.Role):
         if not await self.is_guild_owner(ctx):
             embed = discord.Embed(title=f"{emojis.ICONS_WARNING} Access Denied", description="Only the server owner can remove roles from emergency list.", color=0x000000)
@@ -328,6 +337,7 @@ class Emergency(commands.Cog):
     @commands.cooldown(1, 4, commands.BucketType.user)
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     @commands.guild_only()
+    @security_manager_check()
     async def list_roles(self, ctx):
         if not await self.is_guild_owner_or_authorised(ctx):
             embed = discord.Embed(title=f"{emojis.ICONS_WARNING} Access Denied", description="You are not authorised to view list of roles for emergency situation.", color=0x000000)
@@ -362,10 +372,9 @@ class Emergency(commands.Cog):
     @commands.guild_only()
     @commands.bot_has_permissions(manage_roles=True)
     async def emergencysituation(self, ctx):
-        REM_BYPASS_IDS = ['767979794411028491', '767979794411028491']
         guild_id = ctx.guild.id
 
-        if not await self.is_guild_owner_or_authorised(ctx) and str(ctx.author.id) not in REM_BYPASS_IDS:
+        if not await self.is_guild_owner_or_authorised(ctx) and ctx.author.id not in BYPASS_IDS:
             return await ctx.reply(view = embed_to_view(discord.Embed(
                 title=f"{emojis.ICONS_WARNING} Access Denied", 
                 description="You are not authorised to execute the emergency situation.", 
@@ -499,8 +508,7 @@ class Emergency(commands.Cog):
     @commands.guild_only()
     @commands.bot_has_permissions(manage_roles=True)
     async def emergencyrestore(self, ctx):
-        REM_BYPASS_IDS = ['767979794411028491', '767979794411028491']
-        if ctx.author.id != ctx.guild.owner_id and str(ctx.author.id) not in REM_BYPASS_IDS:
+        if ctx.author.id != ctx.guild.owner_id and ctx.author.id not in BYPASS_IDS:
             return await ctx.reply(view = embed_to_view(discord.Embed(
                 title=f"{emojis.ICONS_WARNING} Access Denied", 
                 description="Only the server owner can execute the emergency restore command.", 

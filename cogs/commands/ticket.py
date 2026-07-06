@@ -6,6 +6,7 @@ from discord import app_commands
 import asyncio
 import io
 from datetime import datetime
+from utils.Tools import is_moderation_staff
 from utils.cv2_compat import embed_to_view, embeds_to_view
 
 EMOJI_DOT = f"{emojis.BLUEDOT}"  # Replace with your emoji
@@ -173,6 +174,8 @@ class TicketView(discord.ui.View):
 
     @discord.ui.button(label="📌 Claim", style=discord.ButtonStyle.primary)
     async def claim(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not isinstance(interaction.user, discord.Member) or not is_moderation_staff(interaction.user):
+            return await interaction.response.send_message("Only ticket staff can claim tickets.", ephemeral=True)
         if self.claimed:
             await interaction.response.send_message("This ticket is already claimed.", ephemeral=True)
         else:
@@ -201,6 +204,8 @@ class CloseOptionsView(discord.ui.View):
 
     @discord.ui.button(label="🗑️ Delete", style=discord.ButtonStyle.danger)
     async def delete(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self.creator.id and not interaction.user.guild_permissions.manage_channels:
+            return await interaction.response.send_message("Only the ticket creator or staff can delete this ticket.", ephemeral=True)
         await interaction.response.send_message("Deleting ticket channel...", ephemeral=True)
         await self.channel.delete(reason="Ticket closed")
 
@@ -209,7 +214,17 @@ class TicketSystem(commands.Cog):
         self.bot = bot
 
     @app_commands.command(name="ticketsetup", description="Create and send a custom ticket panel")
+    @app_commands.default_permissions(manage_guild=True, manage_channels=True)
+    @app_commands.guild_only()
     async def ticketsetup(self, interaction: discord.Interaction):
+        if not isinstance(interaction.user, discord.Member) or not (
+            interaction.user.guild_permissions.administrator
+            or interaction.user.guild_permissions.manage_guild
+            or interaction.user.guild_permissions.manage_channels
+        ):
+            return await interaction.response.send_message("You need Manage Server or Manage Channels to create ticket panels.", ephemeral=True)
+        if interaction.guild and not interaction.guild.me.guild_permissions.manage_channels:
+            return await interaction.response.send_message("I need Manage Channels before ticket panels can be created.", ephemeral=True)
         view = TicketSetupView(self.bot, interaction.user)
         await interaction.response.send_message(view = embed_to_view(view.embed, view = view), ephemeral=True)
 

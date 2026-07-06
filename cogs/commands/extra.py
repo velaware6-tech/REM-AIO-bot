@@ -200,9 +200,11 @@ class Extra(commands.Cog):
       uptime_string = f"Up since {datetime.datetime.utcfromtimestamp(start_time).strftime('%Y-%m-%d %H:%M:%S')} UTC"
       uptime_duration_string = f"{uptime_timedelta.days} days, {uptime_timedelta.seconds // 3600} hours, {(uptime_timedelta.seconds // 60) % 60} minutes, {uptime_timedelta.seconds % 60} seconds"
 
-      embed = discord.Embed(title=f"IceNode Manger Uptime", color=self.color)
-      embed.add_field(name="__UTC__", value=f"{emojis.WARNINGICON} {uptime_string}\n\n", inline=False)
-      embed.add_field(name="__Online Duration__", value=f"{emojis.UPTIME} {uptime_duration_string}", inline=False)
+      embed = discord.Embed(
+        title="Uptime",
+        description=f"**Online:** `{uptime_duration_string}`\n**Started:** `{uptime_string}`",
+        color=self.color
+      )
       embed.set_footer(text=f"Requested by {ctx.author}", icon_url=pfp)
 
       await ctx.send(view = embed_to_view(embed))
@@ -216,85 +218,30 @@ class Extra(commands.Cog):
   @ignore_check()
   @commands.cooldown(1, 3, commands.BucketType.user)
   async def serverinfo(self, ctx):
-        embed = discord.Embed(color=0x000000).set_author(
-            name=f"{ctx.guild.name}'s Information",
-            icon_url=ctx.guild.me.display_avatar.url if ctx.guild.icon is None else ctx.guild.icon.url
-        ).set_footer(
-            text=f"Requested By {ctx.author}",
-            icon_url=ctx.author.avatar.url if ctx.author.avatar else ctx.author.default_avatar.url
-        )
+        regular_emojis = sum(1 for emoji in ctx.guild.emojis if not emoji.animated)
+        animated_emojis = sum(1 for emoji in ctx.guild.emojis if emoji.animated)
+        created = f"<t:{round(ctx.guild.created_at.timestamp())}:R>"
+        features = ", ".join(feature.replace("_", " ").title() for feature in ctx.guild.features[:4]) or "None"
 
-        if ctx.guild.icon is not None:
+        embed = discord.Embed(
+            title=ctx.guild.name,
+            description=(
+                f"**Owner:** <@{ctx.guild.owner_id}>\n"
+                f"**Members:** `{ctx.guild.member_count or len(ctx.guild.members)}`\n"
+                f"**Channels:** `{len(ctx.guild.text_channels)}` text, `{len(ctx.guild.voice_channels)}` voice\n"
+                f"**Roles:** `{len(ctx.guild.roles)}` | **Emojis:** `{regular_emojis}` static, `{animated_emojis}` animated\n"
+                f"**Boosts:** Level `{ctx.guild.premium_tier}` with `{ctx.guild.premium_subscription_count}` boosts\n"
+                f"**Created:** {created}\n"
+                f"**Features:** {features}"
+            ),
+            color=0x000000
+        )
+        if ctx.guild.icon:
             embed.set_thumbnail(url=ctx.guild.icon.url)
-            embed.timestamp = discord.utils.utcnow()
-
-        c_at = ctx.guild.created_at.strftime("%Y-%m-%d %H:%M:%S")
-
-        embed.add_field(
-            name="**__About__**",
-            value=f"**Name : ** {ctx.guild.name}\n**ID :** {ctx.guild.id}\n**Owner {emojis.OWNER} :** {ctx.guild.owner} (<@{ctx.guild.owner_id}>)\n**Created At : ** {c_at}\n**Members :** {len(ctx.guild.members)}",
-            inline=False
+        embed.set_footer(
+            text=f"ID: {ctx.guild.id} | Requested by {ctx.author}",
+            icon_url=ctx.author.display_avatar.url
         )
-
-        if ctx.guild.description:
-            embed.add_field(
-                name="**__Description__**",
-                value=ctx.guild.description,
-                inline=False
-            )
-
-        embed.add_field(
-            name="**__General Stats__**",
-            value=f"**Verification Level :** {ctx.guild.verification_level}\n**Channels :** {len(ctx.guild.channels)}\n**Roles :** {len(ctx.guild.roles)}\n**Emojis :** {len(ctx.guild.emojis)}\n**Boost Status :** Level {ctx.guild.premium_tier} (Boosts: {ctx.guild.premium_subscription_count})",
-            inline=False
-        )
-
-        if ctx.guild.features:
-            features = "\n".join([f"{emojis.TICK}: {feature[:1].upper() + feature[1:].lower().replace('_', ' ')}" for feature in ctx.guild.features])
-            embed.add_field(
-                name="**__Features__**",
-                value=f"{features if len(features) <= 1024 else features[0:1000] + '...and more'}",
-                inline=False
-            )
-
-        embed.add_field(
-            name="**__Channels__**",
-            value=f"**Total:** {len(ctx.guild.channels)}\nChannels: {len(ctx.guild.text_channels)} text, {len(ctx.guild.voice_channels)} voice",
-            inline=False
-        )
-
-        regular_emojis = [emoji for emoji in ctx.guild.emojis if not emoji.animated]
-        animated_emojis = [emoji for emoji in ctx.guild.emojis if emoji.animated]
-        disabled_emojis = len(ctx.guild.emojis) - len(regular_emojis) - len(animated_emojis)
-
-        embed.add_field(
-            name="**__Emoji Info__**",
-            value=f"Regular: {len(regular_emojis)}/100\nAnimated: {len(animated_emojis)}/100\nDisabled: {disabled_emojis} regular, {len(animated_emojis)} animated\nTotal Emoji: {len(ctx.guild.emojis)}/200",
-            inline=False
-        )
-
-        embed.add_field(
-            name="**__Boost Status__**",
-            value=f"Level: {ctx.guild.premium_tier} [{emojis.ICON_BOOSTER}{ctx.guild.premium_subscription_count} boosts]",
-            inline=False
-        )
-
-        roles = ctx.guild.roles
-        roles_list = [role.mention for role in roles]
-        roles_count = len(roles_list)
-        roles_display = "\n".join(roles_list[:10])
-
-        if roles_count > 10:
-            roles_display += f"\n...and {roles_count - 10} more"
-
-        embed.add_field(
-            name=f"**__Server Roles__ [ {roles_count} ]**",
-            value=roles_display,
-            inline=False
-        )
-
-        if ctx.guild.banner:
-            embed.set_image(url=ctx.guild.banner)
 
 
         await ctx.send(view = embed_to_view(embed))
@@ -391,61 +338,39 @@ class Extra(commands.Cog):
         aklm = "Server Member"
 
     bannerUser = await self.bot.fetch_user(member.id)
-    embed = discord.Embed(color=self.color)
-    embed.timestamp = discord.utils.utcnow()
-    if not bannerUser.banner:
-      pass
-    else:
+    top_role = member.top_role.mention if member in ctx.guild.members and len(member.roles) > 1 else "None"
+    role_count = len(member.roles) - 1 if member in ctx.guild.members else 0
+    voice = "None" if member not in ctx.guild.members or not member.voice else member.voice.channel.mention
+    boosting = f"<t:{round(member.premium_since.timestamp())}:R>" if member in ctx.guild.premium_subscribers else "None"
+    embed = discord.Embed(
+      title=f"{member.name}",
+      description=(
+        f"**User:** {member.mention if hasattr(member, 'mention') else member}\n"
+        f"**ID:** `{member.id}`\n"
+        f"**Nickname:** `{nickk}`\n"
+        f"**Bot:** {'Yes' if member.bot else 'No'}\n"
+        f"**Created:** <t:{round(member.created_at.timestamp())}:R>\n"
+        f"**Joined:** {joinedat}\n"
+        f"**Top Role:** {top_role} (`{role_count}` roles)\n"
+        f"**Voice:** {voice}\n"
+        f"**Boosting:** {boosting}\n"
+        f"**Acknowledgement:** {aklm if member in ctx.guild.members else 'Not in server'}"
+      ),
+      color=self.color
+    )
+    embed.set_thumbnail(url=member.display_avatar.url)
+    if bannerUser.banner:
       embed.set_image(url=bannerUser.banner)
-    embed.set_author(name=f"{member.name}'s Information",
-                     icon_url=member.avatar.url
-                     if member.avatar else member.default_avatar.url)
-    embed.set_thumbnail(
-      url=member.avatar.url if member.avatar else member.default_avatar.url)
-    embed.add_field(name="__General Information__",
-                    value=f"""
-**Name:** {member}
-**ID:** {member.id}
-**Nickname:** {nickk}
-**Bot?:** {f'{emojis.TICK} Yes' if member.bot else f'{emojis.CROSSICON} No'}
-**Badges:** {badges}
-**Account Created:** <t:{round(member.created_at.timestamp())}:R>
-**Server Joined:** {joinedat}
-            """,
-                    inline=False)
+    if badges != f"{cross}":
+      embed.add_field(name="Badges", value=badges.rstrip(", "), inline=False)
     if member in ctx.guild.members:
-      r = (', '.join(role.mention for role in member.roles[1:][::-1])
-           if len(member.roles) > 1 else 'None.')
-      embed.add_field(name="__Role Info__",
-                      value=f"""
-**Highest Role:** {member.top_role.mention if len(member.roles) > 1 else 'None'}
-**Roles [{f'{len(member.roles) - 1}' if member.roles else '0'}]:** {r if len(r) <= 1024 else r[0:1006] + ' and more...'}
-**Color:** {member.color if member.color else '99aab5'}
-                """,
-                      inline=False)
-    if member in ctx.guild.members:
-      embed.add_field(
-        name="__Extra__",
-        value=
-        f"**Boosting:** {f'<t:{round(member.premium_since.timestamp())}:R>' if member in ctx.guild.premium_subscribers else 'None'}\n**Voice :** {'None' if not member.voice else member.voice.channel.mention}",
-        inline=False)
-    if member in ctx.guild.members:
-      embed.add_field(name="__Key Permissions__",
-                      value=", ".join([kp]),
-                      inline=False)
-    if member in ctx.guild.members:
-      embed.add_field(name="__Acknowledgement__",
-                      value=f"{aklm}",
-                      inline=False)
-    if member in ctx.guild.members:
+      embed.add_field(name="Key Permissions", value=kp, inline=False)
       embed.set_footer(text=f"Requested by {ctx.author}",
-                       icon_url=ctx.author.avatar.url
-                       if ctx.author.avatar else ctx.author.default_avatar.url)
+                       icon_url=ctx.author.display_avatar.url)
     else:
       if member not in ctx.guild.members:
         embed.set_footer(text=f"{member.name} not in this server.",
-                         icon_url=ctx.author.avatar.url if ctx.author.avatar
-                         else ctx.author.default_avatar.url)
+                         icon_url=ctx.author.display_avatar.url)
     await ctx.send(view = embed_to_view(embed))
 
 
@@ -927,7 +852,7 @@ class Extra(commands.Cog):
   @blacklist_check()
   @commands.cooldown(1, 2, commands.BucketType.user)
   async def ping(self, ctx):
-    msg = await ctx.reply(f"🏓 Pong **{round(self.bot.latency * 1000, 2)}ms**")
+    msg = await ctx.reply("Checking latency...", mention_author=False)
     
     db_latency = None
     try:
@@ -941,7 +866,12 @@ class Extra(commands.Cog):
       print(f"Error measuring database latency: {e}")
       db_latency = "N/A"
 
-    await msg.edit(content=f"🏓 Pong **{round(self.bot.latency * 1000, 2)}ms** | Database: **{db_latency}ms**")
+    embed = discord.Embed(
+      title="Pong",
+      description=f"**Websocket:** `{round(self.bot.latency * 1000, 2)} ms`\n**Database:** `{db_latency} ms`",
+      color=self.color
+    )
+    await msg.edit(content=None, view=embed_to_view(embed))
     
     
     
@@ -1040,4 +970,3 @@ class Extra(commands.Cog):
       description="Thank you for reporting the bug. We will look into it.",
       color=0x000000)
     await ctx.reply(view = embed_to_view(confirm_embed))
-

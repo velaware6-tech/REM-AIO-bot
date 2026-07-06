@@ -6,6 +6,7 @@ from discord.ext import commands
 import aiosqlite
 import os
 from utils.Tools import *
+from utils.config import BYPASS_IDS
 from utils.cv2_compat import embed_to_view, embeds_to_view
 
 # Database setup
@@ -18,7 +19,7 @@ class Nightmode(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         asyncio.create_task(self.initialize_db())
-        self.ricky = ['767979794411028491',]
+        self.ricky = BYPASS_IDS
         self.color = 0x000000  
 
     async def initialize_db(self):
@@ -45,6 +46,7 @@ class Nightmode(commands.Cog):
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     @commands.guild_only()
+    @security_manager_check()
     async def nightmode(self, ctx):
         nightmode_embed = discord.Embed(
             title='__**Nightmode**__',
@@ -63,6 +65,7 @@ class Nightmode(commands.Cog):
 
     @nightmode.command(name="enable", help="Enable nightmode")
     @commands.has_permissions(administrator=True)
+    @security_manager_check()
     @blacklist_check()
     @ignore_check()
     @commands.cooldown(1, 10, commands.BucketType.user)
@@ -133,6 +136,7 @@ class Nightmode(commands.Cog):
 
     @nightmode.command(name="disable", help="Disable nightmode")
     @commands.has_permissions(administrator=True)
+    @security_manager_check()
     @blacklist_check()
     @ignore_check()
     @commands.cooldown(1, 10, commands.BucketType.user)

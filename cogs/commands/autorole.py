@@ -9,6 +9,7 @@ import logging
 from discord.ext import commands
 from typing import List, Dict
 from utils.Tools import *
+from utils.config import OWNER_IDS
 
 logging.basicConfig(
     level=logging.INFO,
@@ -24,7 +25,7 @@ class BasicView(discord.ui.View):
         self.ctx = ctx
 
     async def interaction_check(self, interaction: discord.Interaction):
-        if interaction.user.id != self.ctx.author.id and interaction.user.id not in [767979794411028491]:
+        if interaction.user.id != self.ctx.author.id and interaction.user.id not in OWNER_IDS:
             await interaction.response.send_message("Uh oh! That message doesn't belong to you.\nYou must run this command to interact with it.", ephemeral=True)
             return False
         return True
