@@ -29,9 +29,12 @@ class EmbedEditModal(discord.ui.Modal, title="Edit Ticket Embed"):
         self.add_item(self.image_input)
 
     async def on_submit(self, interaction: discord.Interaction):
+        if interaction.user.id != self.view.author.id:
+            return await interaction.response.send_message("This setup is not yours.", ephemeral=True)
+
         try:
             color = int(self.color_input.value.replace("#", ""), 16) if self.color_input.value else 0x2B2D31
-        except:
+        except ValueError:
             color = 0x2B2D31
 
         embed = discord.Embed(
@@ -60,11 +63,29 @@ class AddOptionModal(discord.ui.Modal, title="Add Ticket Option"):
         self.add_item(self.staff_role)
 
     async def on_submit(self, interaction: discord.Interaction):
+        if interaction.user.id != self.view.author.id:
+            return await interaction.response.send_message("This setup is not yours.", ephemeral=True)
+        if len(self.view.options) >= 25:
+            return await interaction.response.send_message("Ticket panels can have a maximum of 25 options.", ephemeral=True)
+
+        label = str(self.option_name.value).strip()[:80]
+        if not label:
+            return await interaction.response.send_message("Option name is required.", ephemeral=True)
+
+        try:
+            staff_role_id = int(str(self.staff_role.value).strip())
+        except ValueError:
+            return await interaction.response.send_message("Staff Role ID must be a valid role ID.", ephemeral=True)
+
+        role = interaction.guild.get_role(staff_role_id) if interaction.guild else None
+        if role is None:
+            return await interaction.response.send_message("I could not find that staff role in this server.", ephemeral=True)
+
         emoji = discord.PartialEmoji.from_str(self.option_emoji.value)
         self.view.options.append({
-            "label": self.option_name.value,
+            "label": label,
             "emoji": emoji,
-            "staff_role": int(self.staff_role.value)
+            "staff_role": staff_role_id
         })
         await interaction.response.edit_message(content="Option added.", view = embed_to_view(self.view.embed, view = self.view))
 
@@ -78,7 +99,10 @@ class TicketSetupView(discord.ui.View):
         self.channel = None
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        return interaction.user.id == self.author.id
+        if interaction.user.id == self.author.id:
+            return True
+        await interaction.response.send_message("This setup is not yours.", ephemeral=True)
+        return False
 
     @discord.ui.select(
         placeholder="Select an action",
@@ -100,6 +124,8 @@ class TicketSetupView(discord.ui.View):
             await interaction.response.send_modal(AddOptionModal(self))
 
         elif value == "send_embed":
+            if not self.options:
+                return await interaction.response.send_message("Add at least one ticket option first.", ephemeral=True)
             await interaction.response.send_message("Mention the channel to send the ticket panel.", ephemeral=True)
 
             def check(m):
@@ -109,6 +135,9 @@ class TicketSetupView(discord.ui.View):
                 msg = await self.bot.wait_for("message", check=check, timeout=30)
                 if msg.channel_mentions:
                     self.channel = msg.channel_mentions[0]
+                    perms = self.channel.permissions_for(interaction.guild.me)
+                    if not perms.send_messages or not perms.embed_links:
+                        return await interaction.followup.send("I need Send Messages and Embed Links in that channel.", ephemeral=True)
                     await self.send_panel(interaction)
                 else:
                     await interaction.followup.send("No channel mentioned.", ephemeral=True)
@@ -137,17 +166,28 @@ class TicketSetupView(discord.ui.View):
                 return
 
             role = i.guild.get_role(option["staff_role"])
+            if role is None:
+                return await i.response.send_message("Ticket staff role is missing. Ask an admin to recreate this panel.", ephemeral=True)
+            me = i.guild.me
+            if not me.guild_permissions.manage_channels:
+                return await i.response.send_message("I need Manage Channels to create tickets.", ephemeral=True)
             overwrites = {
                 i.guild.default_role: discord.PermissionOverwrite(view_channel=False),
                 i.user: discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True),
                 role: discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)
             }
 
-            ticket_channel = await i.guild.create_text_channel(
-                name=f"{selected_label.lower()}-{ticket_counter}",
-                overwrites=overwrites,
-                reason="New support ticket"
-            )
+            safe_label = "".join(ch for ch in selected_label.lower() if ch.isalnum() or ch in "-_")[:30] or "ticket"
+            try:
+                ticket_channel = await i.guild.create_text_channel(
+                    name=f"{safe_label}-{ticket_counter}",
+                    overwrites=overwrites,
+                    reason=f"New support ticket by {i.user} ({i.user.id})"
+                )
+            except discord.Forbidden:
+                return await i.response.send_message("I do not have permission to create ticket channels.", ephemeral=True)
+            except discord.HTTPException:
+                return await i.response.send_message("Discord rejected the ticket channel creation. Try again later.", ephemeral=True)
 
             ticket_embed = discord.Embed(
                 title=f"{selected_label} Ticket",
@@ -185,6 +225,10 @@ class TicketView(discord.ui.View):
 
     @discord.ui.button(label="❌ Close", style=discord.ButtonStyle.danger)
     async def close(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self.creator.id and not (
+            isinstance(interaction.user, discord.Member) and is_moderation_staff(interaction.user)
+        ):
+            return await interaction.response.send_message("Only the ticket creator or staff can close this ticket.", ephemeral=True)
         await interaction.response.send_message("Ticket will be closed. Choose below:", view=CloseOptionsView(interaction.channel, self.creator), ephemeral=True)
 
 class CloseOptionsView(discord.ui.View):
@@ -195,19 +239,30 @@ class CloseOptionsView(discord.ui.View):
 
     @discord.ui.button(label="📄 Transcript", style=discord.ButtonStyle.secondary)
     async def transcript(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self.creator.id and not (
+            isinstance(interaction.user, discord.Member) and is_moderation_staff(interaction.user)
+        ):
+            return await interaction.response.send_message("Only the ticket creator or staff can request transcripts.", ephemeral=True)
         messages = [f"{msg.created_at.strftime('%Y-%m-%d %H:%M:%S')} - {msg.author}: {msg.content}"
                     async for msg in self.channel.history(limit=None, oldest_first=True)]
 
         transcript_file = discord.File(io.BytesIO("\n".join(messages).encode()), filename=f"transcript-{self.channel.name}.txt")
-        await interaction.user.send("Here is the ticket transcript:", file=transcript_file)
+        try:
+            await interaction.user.send("Here is the ticket transcript:", file=transcript_file)
+        except discord.Forbidden:
+            return await interaction.response.send_message("I could not DM you the transcript.", ephemeral=True)
         await interaction.response.send_message("Transcript sent to your DMs.", ephemeral=True)
 
     @discord.ui.button(label="🗑️ Delete", style=discord.ButtonStyle.danger)
     async def delete(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if interaction.user.id != self.creator.id and not interaction.user.guild_permissions.manage_channels:
+        if interaction.user.id != self.creator.id and not (
+            isinstance(interaction.user, discord.Member) and is_moderation_staff(interaction.user)
+        ):
             return await interaction.response.send_message("Only the ticket creator or staff can delete this ticket.", ephemeral=True)
+        if interaction.guild and not interaction.guild.me.guild_permissions.manage_channels:
+            return await interaction.response.send_message("I need Manage Channels to delete this ticket.", ephemeral=True)
         await interaction.response.send_message("Deleting ticket channel...", ephemeral=True)
-        await self.channel.delete(reason="Ticket closed")
+        await self.channel.delete(reason=f"Ticket closed by {interaction.user} ({interaction.user.id})")
 
 class TicketSystem(commands.Cog):
     def __init__(self, bot):

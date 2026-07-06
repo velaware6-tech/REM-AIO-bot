@@ -3,6 +3,7 @@ import json
 import aiosqlite
 import logging
 from discord.ext import commands
+from discord import app_commands
 from utils.config import serverLink
 from core import axon, Cog, Context
 from utils.Tools import get_ignore_data
@@ -29,6 +30,22 @@ class Errors(Cog):
       return
 
     if isinstance(error, commands.CheckFailure):
+      if isinstance(error, commands.MissingPermissions):
+        missing = [perm.replace("_", " ").replace("guild", "server").title() for perm in error.missing_permissions]
+        fmt = "{}, and {}".format(", ".join(missing[:-1]), missing[-1]) if len(missing) > 2 else " and ".join(missing)
+        embed = discord.Embed(color=0x000000, description=f"You need **{fmt}** to run `{ctx.command.qualified_name}`.")
+        embed.set_author(name="Missing Permissions", icon_url=self.client.user.display_avatar.url)
+        await ctx.reply(view=embed_to_view(embed), delete_after=8, mention_author=False)
+        ctx.command.reset_cooldown(ctx)
+        return
+
+      if isinstance(error, commands.BotMissingPermissions):
+        missing = [perm.replace("_", " ").replace("guild", "server").title() for perm in error.missing_permissions]
+        fmt = "{}, and {}".format(", ".join(missing[:-1]), missing[-1]) if len(missing) > 2 else " and ".join(missing)
+        await ctx.reply(f"I need **{fmt}** to run `{ctx.command.qualified_name}`.", delete_after=8, mention_author=False)
+        ctx.command.reset_cooldown(ctx)
+        return
+
       if ctx.guild is None:
         return
 
@@ -53,6 +70,10 @@ class Errors(Cog):
       if ctx.command.name in cmd or any(alias in cmd for alias in ctx.command.aliases):
         await ctx.reply(f"{ctx.author.mention} This **command is ignored** in this guild. Please use other commands or try this command in a different guild", delete_after=8)
         return
+
+      await ctx.reply("You do not have permission to use this command.", delete_after=8, mention_author=False)
+      ctx.command.reset_cooldown(ctx)
+      return
 
     if isinstance(error, commands.NoPrivateMessage):
       embed = discord.Embed(color=0x000000, description="You can't use my commands in DMs.")
@@ -109,5 +130,38 @@ class Errors(Cog):
 
     if isinstance(error, commands.CommandInvokeError):
       log.exception("Command %s failed", ctx.command.qualified_name if ctx.command else "unknown", exc_info=error.original)
+      try:
+        await ctx.reply("Something went wrong while running that command. The error was logged.", delete_after=10, mention_author=False)
+      except discord.HTTPException:
+        pass
       return
 
+    log.exception("Unhandled command error in %s", ctx.command.qualified_name if ctx.command else "unknown", exc_info=error)
+    try:
+      await ctx.reply("Something went wrong while running that command. The error was logged.", delete_after=10, mention_author=False)
+    except discord.HTTPException:
+      pass
+
+  @commands.Cog.listener()
+  async def on_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
+    if isinstance(error, app_commands.CommandOnCooldown):
+      message = f"Slow down. Try again in **{error.retry_after:.2f}** seconds."
+    elif isinstance(error, app_commands.MissingPermissions):
+      missing = ", ".join(perm.replace("_", " ").title() for perm in error.missing_permissions)
+      message = f"You need **{missing}** to use this command."
+    elif isinstance(error, app_commands.BotMissingPermissions):
+      missing = ", ".join(perm.replace("_", " ").title() for perm in error.missing_permissions)
+      message = f"I need **{missing}** to use this command."
+    elif isinstance(error, app_commands.CheckFailure):
+      message = "You do not have permission to use this command."
+    else:
+      log.exception("App command %s failed", getattr(interaction.command, "qualified_name", "unknown"), exc_info=error)
+      message = "Something went wrong while running that command. The error was logged."
+
+    try:
+      if interaction.response.is_done():
+        await interaction.followup.send(message, ephemeral=True)
+      else:
+        await interaction.response.send_message(message, ephemeral=True)
+    except discord.HTTPException:
+      pass

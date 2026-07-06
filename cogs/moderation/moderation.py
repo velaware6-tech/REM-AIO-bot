@@ -123,6 +123,7 @@ class Moderation(commands.Cog):
   @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
   @commands.guild_only()
   @commands.has_permissions(administrator=True)
+  @commands.bot_has_permissions(manage_roles=True)
   @commands.cooldown(1, 15, commands.BucketType.channel)
   async def unlockall(self, ctx):
       if ctx.author == ctx.guild.owner or ctx.author.top_role.position > ctx.guild.me.top_role.position:
@@ -203,6 +204,7 @@ class Moderation(commands.Cog):
   @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
   @commands.guild_only()
   @commands.has_permissions(administrator=True)
+  @commands.bot_has_permissions(manage_roles=True)
   @commands.cooldown(1, 15, commands.BucketType.channel)
   async def lockall(self, ctx):
       if ctx.author == ctx.guild.owner or ctx.author.top_role.position > ctx.guild.me.top_role.position:
@@ -350,6 +352,7 @@ class Moderation(commands.Cog):
   @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
   @commands.guild_only()
   @commands.has_permissions(administrator=True)
+  @commands.bot_has_permissions(manage_roles=True)
   @commands.cooldown(1, 15, commands.BucketType.channel)
   async def hideall(self, ctx):
       if ctx.author == ctx.guild.owner or ctx.author.top_role.position > ctx.guild.me.top_role.position:
@@ -423,6 +426,7 @@ class Moderation(commands.Cog):
   @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
   @commands.guild_only()
   @commands.has_permissions(administrator=True)
+  @commands.bot_has_permissions(manage_roles=True)
   @commands.cooldown(1, 15, commands.BucketType.channel)
   async def unhideall(self, ctx):
       if ctx.author == ctx.guild.owner or ctx.author.top_role.position > ctx.guild.me.top_role.position:
@@ -509,6 +513,12 @@ class Moderation(commands.Cog):
                 color=self.color
             )))
           return
+      if len(prefix) > 10:
+          await ctx.reply(view = embed_to_view(discord.Embed(title=f"{emojis.CROSSICON} Error",
+                description="Prefix cannot be longer than 10 characters.",
+                color=self.color
+            )))
+          return
           
       data = await getConfig(ctx.guild.id)
       if ctx.author == ctx.guild.owner or ctx.author.top_role.position > ctx.guild.me.top_role.position:
@@ -533,6 +543,9 @@ class Moderation(commands.Cog):
   @blacklist_check()
   @ignore_check()
   @commands.has_permissions(manage_channels=True)
+  @commands.bot_has_permissions(manage_channels=True)
+  @commands.guild_only()
+  @commands.cooldown(1, 7, commands.BucketType.user)
   async def clone(self, ctx: commands.Context, channel: discord.TextChannel):
     
     if not ctx.guild.me.guild_permissions.manage_channels:
@@ -655,6 +668,7 @@ class Moderation(commands.Cog):
   @top_check()
   @commands.cooldown(1, 7, commands.BucketType.user)
   @commands.has_permissions(manage_channels=True)
+  @commands.bot_has_permissions(manage_channels=True)
   async def _nuke(self, ctx: commands.Context):
     button = Button(label="Confirm",
                     style=discord.ButtonStyle.green,
@@ -715,7 +729,8 @@ class Moderation(commands.Cog):
   @blacklist_check()
   @ignore_check()
   @commands.cooldown(1, 2, commands.BucketType.user)
-  @commands.has_permissions(manage_messages=True)
+  @commands.has_permissions(manage_channels=True)
+  @commands.bot_has_permissions(manage_channels=True)
   async def _slowmode(self, ctx: commands.Context, seconds: int = 0):
     if seconds > 120:
       embed=discord.Embed(description="Slowmode can not be over 2 minutes",
@@ -745,8 +760,8 @@ class Moderation(commands.Cog):
   @blacklist_check()
   @ignore_check()
   @commands.cooldown(1, 2, commands.BucketType.user)
-  @commands.has_permissions(manage_messages=True)
-  @commands.bot_has_permissions(manage_messages=True)
+  @commands.has_permissions(manage_channels=True)
+  @commands.bot_has_permissions(manage_channels=True)
   async def _unslowmode(self, ctx: commands.Context):
     await ctx.channel.edit(slowmode_delay=0)
     embed=discord.Embed(description="Successfully Disabled slowmode", color=self.color)
@@ -784,6 +799,7 @@ class Moderation(commands.Cog):
   @ignore_check()
   @commands.cooldown(1, 3, commands.BucketType.user)
   @commands.has_permissions(manage_emojis=True)
+  @commands.bot_has_permissions(manage_emojis=True)
   async def delemoji(self, ctx, emoji: str = None):
     init_message = await ctx.reply("Processing to delete emojis...", mention_author=False)
     message_content = None
@@ -951,6 +967,7 @@ class Moderation(commands.Cog):
   @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
   @commands.guild_only()
   @commands.has_permissions(ban_members=True)
+  @commands.bot_has_permissions(ban_members=True)
   async def unbanall(self, ctx):
     button = Button(label="Confirm",
                     style=discord.ButtonStyle.green,

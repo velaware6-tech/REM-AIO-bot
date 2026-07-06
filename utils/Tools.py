@@ -184,6 +184,31 @@ def is_security_manager(member: discord.Member) -> bool:
     )
 
 
+def can_manage_member(actor: discord.Member, target: discord.Member) -> bool:
+    if actor.guild is None or target.guild is None or actor.guild.id != target.guild.id:
+        return False
+    if actor.id == actor.guild.owner_id:
+        return True
+    if target.id == actor.guild.owner_id:
+        return False
+    return actor.top_role > target.top_role
+
+
+def can_manage_role(actor: discord.Member, role: discord.Role) -> bool:
+    if actor.guild is None or role.guild.id != actor.guild.id:
+        return False
+    if actor.id == actor.guild.owner_id:
+        return True
+    return actor.top_role > role
+
+
+async def deny(ctx, message: str):
+    try:
+        return await ctx.reply(message, mention_author=False)
+    except Exception:
+        return await ctx.send(message)
+
+
 def security_manager_check():
     async def predicate(ctx):
         return bool(ctx.guild and is_security_manager(ctx.author))

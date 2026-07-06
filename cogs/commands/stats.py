@@ -22,7 +22,9 @@ class Stats(commands.Cog):
         self.start_time = time.time()
         self.total_songs_played = 0
         self._code_stats: tuple[int, int, int] | None = None
-        bot.loop.create_task(self.setup_database())
+
+    async def cog_load(self) -> None:
+        await self.setup_database()
 
     async def setup_database(self):
         os.makedirs("db", exist_ok=True)
