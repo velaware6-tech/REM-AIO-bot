@@ -572,11 +572,11 @@ class Music(commands.Cog):
             embed.add_field(name="Duration", value=f"`{duration}`")
             embed.add_field(name="Source", value=self.source_link_value(track))
             embed.set_image(url="attachment://player.png")
-            embed.set_footer(text="Requested by " + (ctx.author.display_name if not autoplay else f"{ctx.author.display_name} (Autoplay Mode)"), icon_url=ctx.author.avatar.url if ctx.author.avatar else ctx.author.default_avatar.url)
+            embed.set_footer(text="Requested by " + (ctx.author.display_name if not autoplay else f"{ctx.author.display_name} (Autoplay Mode)"), icon_url=ctx.author.display_avatar.url)
 
-            await ctx.send(view = embed_to_view(embed, view = MusicControlView(player, ctx)), file=file, )
+            await ctx.send(view = embed_to_view(embed, view = MusicControlView(player, ctx)), file=file)
         else:
-            await ctx.send(view = embed_to_view(discord.Embed(description="Track has no artwork.")), ephemeral=True)
+            await ctx.send(view = embed_to_view(discord.Embed(description="Track has no artwork.")))
 
 
     async def on_track_end(self, payload: wavelink.TrackEndEventPayload):
@@ -650,11 +650,7 @@ class Music(commands.Cog):
 
         if isinstance(tracks, wavelink.Playlist):
             await vc.queue.put_wait(tracks.tracks)
-<<<<<<< HEAD
-            await ctx.send(view = embed_to_view(discord.Embed(description=f"{emojis.ICONS_PLUS} Added playlist [{tracks.name}](https://discord.gg/mZBtu84xGH) with **{len(tracks.tracks)} songs** to the queue.", color=0x000000)))
-=======
             await ctx.send(view = embed_to_view(discord.Embed(description=f"{emojis.ICONS_PLUS} Added playlist **{tracks.name}** with **{len(tracks.tracks)} songs** to the queue.", color=0x000000)))
->>>>>>> 597e821a07560f19f64c5b9f02daf0e0fc653532
             if not vc.playing:
                 track = await vc.queue.get_wait()
                 await vc.play(track)
@@ -662,11 +658,7 @@ class Music(commands.Cog):
         else:
             track = tracks[0]
             await vc.queue.put_wait(track)
-<<<<<<< HEAD
-            await ctx.send(view = embed_to_view(discord.Embed(description=f"{emojis.ICONS_PLUS}  Added [{track.title}](https://discord.gg/mZBtu84xGH) to the queue.", color=0x000000)))
-=======
             await ctx.send(view = embed_to_view(discord.Embed(description=f"{emojis.ICONS_PLUS} Added {self.track_link(track)} to the queue.", color=0x000000)))
->>>>>>> 597e821a07560f19f64c5b9f02daf0e0fc653532
             if not vc.playing:
                 await vc.play(await vc.queue.get_wait())
                 await self.display_player_embed(vc, track, ctx)
@@ -695,11 +687,7 @@ class Music(commands.Cog):
 
                 track = search_results[0]
                 await vc.queue.put_wait(track)
-<<<<<<< HEAD
-                await ctx.send(view = embed_to_view(discord.Embed(description=f"{emojis.ICONS_PLUS} Added [{track.title}](https://discord.gg/mZBtu84xGH) to the queue.", color=0x000000)))
-=======
                 await ctx.send(view = embed_to_view(discord.Embed(description=f"{emojis.ICONS_PLUS} Added {self.track_link(track)} to the queue.", color=0x000000)))
->>>>>>> 597e821a07560f19f64c5b9f02daf0e0fc653532
                 if not vc.playing:
                     await vc.play(track)
                     await self.display_player_embed(vc, track, ctx)
@@ -730,11 +718,7 @@ class Music(commands.Cog):
                         c += 1
                         await ctx.message.add_reaction("✅")
 
-<<<<<<< HEAD
-                await ctx.send(view = embed_to_view(discord.Embed(description=f"{emojis.ICONS_PLUS} Added **{c}** of **{playlist_length}** tracks from **playlist** **[{playlist_info['name']}](https://discord.gg/mZBtu84xGH)** to the queue.", color=0x000000)))
-=======
                 await ctx.send(view = embed_to_view(discord.Embed(description=f"{emojis.ICONS_PLUS} Added **{c}** of **{playlist_length}** tracks from playlist **{playlist_info['name']}** to the queue.", color=0x000000)))
->>>>>>> 597e821a07560f19f64c5b9f02daf0e0fc653532
                 await lmao.delete()
                 
                 if not vc.playing:
@@ -762,11 +746,7 @@ class Music(commands.Cog):
                     if track_results:
                         await vc.queue.put_wait(track_results[0])
 
-<<<<<<< HEAD
-                await ctx.send(view = embed_to_view(discord.Embed(description=f"{emojis.ICONS_PLUS} Added all tracks from album **[{album_info['name']}](https://discord.gg/mZBtu84xGH)** to the queue.", color=0x000000)))
-=======
                 await ctx.send(view = embed_to_view(discord.Embed(description=f"{emojis.ICONS_PLUS} Added all tracks from album **{album_info['name']}** to the queue.", color=0x000000)))
->>>>>>> 597e821a07560f19f64c5b9f02daf0e0fc653532
                 if not vc.playing:
                     next_track = await vc.queue.get_wait()
                     await vc.play(next_track)

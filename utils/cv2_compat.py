@@ -1,37 +1,21 @@
-"""
-cv2_compat.py — Drop-in Panel class that renders discord.Embed-style content
-as a Components V2 LayoutView (discord.ui.Container).
-
-Usage:
-    panel = Panel(title="Success", description="Role added!", color=0x00ff00)
-    panel.add_field(name="Member", value="`devii`")
-    panel.set_footer(text="Requested by devii")
-    await panel.send(ctx)         # ctx.send(view=...)
-    await panel.reply(ctx)        # ctx.reply(view=..., mention_author=False)
-
-    # Or one-liner:
-    await cv2_send(ctx, title="Done", description="Action completed.")
-"""
+"""Helpers for rendering embed-like bot messages as Components V2 panels."""
 from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
-from typing import Optional, Any
+from typing import Any, Optional
+
 import discord
 
 __all__ = ("Panel", "cv2_send", "embed_to_view", "embeds_to_view")
 
-<<<<<<< HEAD
 _MAX_TEXT_DISPLAY = 3800
 
-=======
->>>>>>> 597e821a07560f19f64c5b9f02daf0e0fc653532
 
 def _asset_url(value: Any) -> Optional[str]:
     url = getattr(value, "url", None)
     return str(url) if url else None
 
 
-<<<<<<< HEAD
 def _append_text_chunks(container_children: list[discord.ui.Item], lines: Iterable[str]) -> None:
     current = ""
     for raw_line in lines:
@@ -47,8 +31,6 @@ def _append_text_chunks(container_children: list[discord.ui.Item], lines: Iterab
         container_children.append(discord.ui.TextDisplay(current))
 
 
-=======
->>>>>>> 597e821a07560f19f64c5b9f02daf0e0fc653532
 def _add_embed_parts(container_children: list[discord.ui.Item], embed: discord.Embed) -> None:
     author_name = getattr(embed.author, "name", None)
     if author_name:
@@ -66,40 +48,20 @@ def _add_embed_parts(container_children: list[discord.ui.Item], embed: discord.E
     if embed.description:
         container_children.append(discord.ui.TextDisplay(embed.description))
 
-<<<<<<< HEAD
     media_urls: list[str] = []
     thumb_url = _asset_url(embed.thumbnail)
+    image_url = _asset_url(embed.image)
     if thumb_url:
         media_urls.append(thumb_url)
-    image_url = _asset_url(embed.image)
     if image_url:
         media_urls.append(image_url)
     if media_urls:
-        container_children.append(
-            discord.ui.MediaGallery(*(discord.MediaGalleryItem(url) for url in media_urls))
-        )
-=======
-    thumb_url = _asset_url(embed.thumbnail)
-    if thumb_url:
-        container_children.append(discord.ui.Thumbnail(thumb_url))
-
-    image_url = _asset_url(embed.image)
-    if image_url:
-        container_children.append(discord.ui.MediaGallery(discord.MediaGalleryItem(image_url)))
->>>>>>> 597e821a07560f19f64c5b9f02daf0e0fc653532
+        container_children.append(discord.ui.MediaGallery(*(discord.MediaGalleryItem(url) for url in media_urls)))
 
     if embed.fields:
-        if embed.description or embed.title or author_name or thumb_url or image_url:
+        if embed.description or embed.title or author_name or media_urls:
             container_children.append(discord.ui.Separator())
-<<<<<<< HEAD
-        _append_text_chunks(
-            container_children,
-            (f"**{field.name}**\n{field.value}" for field in embed.fields),
-        )
-=======
-        for field in embed.fields:
-            container_children.append(discord.ui.TextDisplay(f"**{field.name}**\n{field.value}"))
->>>>>>> 597e821a07560f19f64c5b9f02daf0e0fc653532
+        _append_text_chunks(container_children, (f"**{field.name}**\n{field.value}" for field in embed.fields))
 
     footer_text = getattr(embed.footer, "text", None)
     if footer_text:
@@ -107,7 +69,6 @@ def _add_embed_parts(container_children: list[discord.ui.Item], embed: discord.E
         container_children.append(discord.ui.TextDisplay(f"-# {footer_text}"))
 
 
-<<<<<<< HEAD
 def _append_view_links(container_children: list[discord.ui.Item], source: Optional[discord.ui.View]) -> None:
     if source is None:
         return
@@ -121,46 +82,6 @@ def _append_view_links(container_children: list[discord.ui.Item], source: Option
     if links:
         container_children.append(discord.ui.Separator())
         container_children.append(discord.ui.TextDisplay(" | ".join(links)))
-=======
-def _copy_view_items(target: discord.ui.LayoutView, source: Optional[discord.ui.View]) -> None:
-    if source is None:
-        return
-
-    button_row: list[discord.ui.Item] = []
-
-    def flush_buttons() -> None:
-        nonlocal button_row
-        if button_row:
-            target.add_item(discord.ui.ActionRow(*button_row))
-            button_row = []
-
-    for child in list(getattr(source, "children", ())):
-        if isinstance(child, discord.ui.Button):
-            button_row.append(child)
-            if len(button_row) == 5:
-                flush_buttons()
-            continue
-
-        if isinstance(child, discord.ui.select.BaseSelect):
-            flush_buttons()
-            target.add_item(discord.ui.ActionRow(child))
-            continue
-
-        flush_buttons()
-        try:
-            target.add_item(child)
-        except ValueError:
-            continue
-
-    flush_buttons()
-
-    for name in ("interaction_check", "on_timeout", "on_error"):
-        if hasattr(source, name):
-            try:
-                setattr(target, name, getattr(source, name))
-            except Exception:
-                pass
->>>>>>> 597e821a07560f19f64c5b9f02daf0e0fc653532
 
 
 def embeds_to_view(
@@ -175,7 +96,6 @@ def embeds_to_view(
             children.append(discord.ui.Separator())
         _add_embed_parts(children, embed)
 
-<<<<<<< HEAD
     _append_view_links(children, view)
 
     if not children:
@@ -183,11 +103,6 @@ def embeds_to_view(
 
     layout = discord.ui.LayoutView(timeout=timeout if timeout is not None else getattr(view, "timeout", 180))
     layout.add_item(discord.ui.Container(*children))
-=======
-    layout = discord.ui.LayoutView(timeout=timeout if timeout is not None else getattr(view, "timeout", 180))
-    layout.add_item(discord.ui.Container(*children))
-    _copy_view_items(layout, view)
->>>>>>> 597e821a07560f19f64c5b9f02daf0e0fc653532
     return layout
 
 
@@ -203,21 +118,13 @@ def embed_to_view(
 class Panel:
     """Embed-compatible wrapper that outputs a Components V2 LayoutView."""
 
-    def __init__(
-        self,
-        *,
-        title: Optional[str] = None,
-        description: Optional[str] = None,
-        color: Any = None,
-    ) -> None:
+    def __init__(self, *, title: Optional[str] = None, description: Optional[str] = None, color: Any = None) -> None:
         self.title = title
         self.description = description
-        self.color = color  # kept for API compat, not used visually
+        self.color = color
         self._author_name: Optional[str] = None
         self._footer_text: Optional[str] = None
         self._fields: list[tuple[str, str, bool]] = []
-
-    # ── Embed-compatible setters ───────────────────────────────────────────
 
     def set_author(self, *, name: str, icon_url: Optional[str] = None) -> "Panel":
         self._author_name = name
@@ -232,52 +139,38 @@ class Panel:
         return self
 
     def set_thumbnail(self, *, url: str) -> "Panel":
-        return self  # not supported in CV2 containers — silently ignored
+        return self
 
     def set_image(self, *, url: str) -> "Panel":
-        return self  # not supported in CV2 containers — silently ignored
-
-    # ── Build ──────────────────────────────────────────────────────────────
+        return self
 
     def to_view(self, timeout: Optional[float] = None) -> discord.ui.LayoutView:
         children: list[discord.ui.Item] = []
 
-        # Author line (shown before title if present)
         if self._author_name:
             children.append(discord.ui.TextDisplay(f"> {self._author_name}"))
-
-        # Title
         if self.title:
             children.append(discord.ui.TextDisplay(f"## {self.title}"))
-
-        # Separator after header block
         if self._author_name or self.title:
             children.append(discord.ui.Separator(visible=False))
-
-        # Description
         if self.description:
             children.append(discord.ui.TextDisplay(self.description))
-
-        # Fields
         if self._fields:
             if self.description or self.title or self._author_name:
-                children.append(discord.ui.Separator(visible=True))
+                children.append(discord.ui.Separator())
             _append_text_chunks(children, (f"**{name}**\n{value}" for name, value, _ in self._fields))
-
-        # Footer
         if self._footer_text:
-            children.append(discord.ui.Separator(visible=True))
+            children.append(discord.ui.Separator())
             children.append(discord.ui.TextDisplay(f"-# {self._footer_text}"))
+        if not children:
+            children.append(discord.ui.TextDisplay("\u200b"))
 
-        container = discord.ui.Container(*children)
         view = discord.ui.LayoutView(timeout=timeout)
-        view.add_item(container)
+        view.add_item(discord.ui.Container(*children))
         return view
 
-    # ── Send helpers ───────────────────────────────────────────────────────
-
     async def send(self, ctx, content: Optional[str] = None, **kwargs) -> Optional[discord.Message]:
-        kwargs.pop("embed", None)  # drop any stray embed kwarg
+        kwargs.pop("embed", None)
         return await ctx.send(content=content, view=self.to_view(), **kwargs)
 
     async def reply(
@@ -288,19 +181,12 @@ class Panel:
         **kwargs,
     ) -> Optional[discord.Message]:
         kwargs.pop("embed", None)
-        return await ctx.reply(
-            content=content,
-            view=self.to_view(),
-            mention_author=mention_author,
-            **kwargs,
-        )
+        return await ctx.reply(content=content, view=self.to_view(), mention_author=mention_author, **kwargs)
 
     async def edit(self, message: discord.Message, content: Optional[str] = None, **kwargs) -> discord.Message:
         kwargs.pop("embed", None)
         return await message.edit(content=content, view=self.to_view(), **kwargs)
 
-
-# ── One-liner helper ───────────────────────────────────────────────────────────
 
 async def cv2_send(
     ctx,
@@ -316,17 +202,12 @@ async def cv2_send(
     content: Optional[str] = None,
     **kwargs,
 ) -> Optional[discord.Message]:
-    """
-    Quick one-liner CV2 sender.
-
-    fields = [(name, value), ...]
-    """
     panel = Panel(title=title, description=description, color=color)
     if author:
         panel.set_author(name=author)
     if footer:
         panel.set_footer(text=footer)
-    for name, value in (fields or []):
+    for name, value in fields or []:
         panel.add_field(name=name, value=value)
 
     if reply:
