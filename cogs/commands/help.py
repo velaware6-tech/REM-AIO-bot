@@ -59,13 +59,15 @@ class HelpCommand(commands.HelpCommand):
         match_list = "\n".join([f"{index}. `{match}`" for index, match in enumerate(matches, start=1)])
         fields.append(("Did you mean", match_list))
 
-    await ctx.reply(
-        view=error_panel(
+    await vhelp.reply_help(
+        ctx,
+        error_panel(
             description,
             title="Command Not Found",
             fields=fields,
             footer=f"Requested by {ctx.author}",
-        )
+            timeout=vhelp.HELP_VIEW_TIMEOUT,
+        ),
     )
 
   async def send_bot_help(self, mapping):
@@ -91,7 +93,7 @@ class HelpCommand(commands.HelpCommand):
       prefix=prefix,
       total_commands=len(set(self.context.bot.walk_commands())),
     )
-    await ctx.reply(view=view, mention_author=False)
+    await vhelp.reply_help(ctx, view, mention_author=False)
 
   async def send_command_help(self, command):
     ctx = self.context
@@ -108,8 +110,9 @@ class HelpCommand(commands.HelpCommand):
     sonu = command.help if command.help else "No help provided."
     alias = " | ".join(command.aliases) if command.aliases else "No aliases"
 
-    await self.context.reply(
-        view=info_panel(
+    await vhelp.reply_help(
+        ctx,
+        info_panel(
             f"```xml\n<[] = optional | ‹› = required\nDon't type these while using commands>\n```\n{sonu}",
             title=f"{command.qualified_name.title()} Command",
             fields=[
@@ -117,6 +120,7 @@ class HelpCommand(commands.HelpCommand):
                 ("Usage", f"`{self.context.prefix}{command.signature}`"),
             ],
             footer=f"Requested by {ctx.author}",
+            timeout=vhelp.HELP_VIEW_TIMEOUT,
         ),
         mention_author=False,
     )
@@ -167,7 +171,7 @@ class HelpCommand(commands.HelpCommand):
       entries=entries,
       per_page=4,
     )
-    await ctx.reply(view=view, mention_author=False)
+    await vhelp.reply_help(ctx, view, mention_author=False)
 
   async def send_cog_help(self, cog):
     ctx = self.context
@@ -193,7 +197,7 @@ class HelpCommand(commands.HelpCommand):
       entries=entries,
       per_page=4,
     )
-    await ctx.reply(view=view, mention_author=False)
+    await vhelp.reply_help(ctx, view, mention_author=False)
 
 
 class Help(Cog, name="help"):

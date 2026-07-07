@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from typing import Optional
 
 import discord
@@ -8,8 +9,62 @@ from discord.ext import commands
 from utils import emojis
 from utils.components_v2 import action_row, separator, text
 
-
 MAX_PAGE_CHARS = 3600
+HELP_VIEW_TIMEOUT = 120.0
+
+
+class ExpiringHelpMixin:
+    """Delete the help message when the view times out."""
+
+    message: Optional[discord.Message] = None
+
+    def bind_message(self, message: discord.Message) -> None:
+        self.message = message
+
+    async def _delete_bound_message(self) -> None:
+        if self.message is None:
+            return
+        try:
+            await self.message.delete()
+        except (discord.NotFound, discord.Forbidden, discord.HTTPException):
+            pass
+        finally:
+            self.message = None
+
+    async def on_timeout(self) -> None:
+        await self._delete_bound_message()
+
+
+def schedule_help_expire(
+    message: discord.Message,
+    delay: float = HELP_VIEW_TIMEOUT,
+) -> None:
+    """Delete a static help panel after a fixed delay."""
+
+    async def _expire() -> None:
+        await asyncio.sleep(delay)
+        try:
+            await message.delete()
+        except (discord.NotFound, discord.Forbidden, discord.HTTPException):
+            pass
+
+    asyncio.create_task(_expire())
+
+
+async def reply_help(
+    ctx: commands.Context,
+    view: discord.ui.View,
+    **kwargs,
+) -> discord.Message:
+    """Send a help panel and auto-remove it when the view expires."""
+    message = await ctx.reply(view=view, **kwargs)
+    if isinstance(view, ExpiringHelpMixin):
+        view.bind_message(message)
+    elif isinstance(view, discord.ui.LayoutView) and view.timeout:
+        schedule_help_expire(message, view.timeout)
+    else:
+        schedule_help_expire(message)
+    return message
 
 
 class HelpDropdown(discord.ui.Select):
@@ -83,7 +138,7 @@ class HelpButton(discord.ui.Button):
             await view.set_page(view.total_pages - 1, interaction)
 
 
-class HelpView(discord.ui.LayoutView):
+class HelpView(ExpiringHelpMixin, discord.ui.LayoutView):
     def __init__(
         self,
         mapping: dict,
@@ -93,8 +148,9 @@ class HelpView(discord.ui.LayoutView):
         *,
         prefix: Optional[str] = None,
         total_commands: Optional[int] = None,
+        timeout: float = HELP_VIEW_TIMEOUT,
     ):
-        super().__init__(timeout=None)
+        super().__init__(timeout=timeout)
 
         self.mapping = mapping
         self.ctx = ctx
@@ -294,6 +350,7 @@ class HelpView(discord.ui.LayoutView):
     def _footer(self) -> str:
         return (
             f"- Help page {self.index + 1}/{self.total_pages} "
+            f"| Closes after {int(HELP_VIEW_TIMEOUT)}s idle "
             f"| Requested by: {self.ctx.author.display_name}"
         )
 
@@ -422,7 +479,7 @@ class ListNavButton(discord.ui.Button):
             await view.set_page(view.total_pages - 1, interaction)
 
 
-class HelpListView(discord.ui.LayoutView):
+class HelpListView(ExpiringHelpMixin, discord.ui.LayoutView):
     """CV2 paginated list for per-command and per-category help."""
 
     def __init__(
@@ -433,7 +490,7 @@ class HelpListView(discord.ui.LayoutView):
         description: str = "",
         entries: list[tuple[str, str]],
         per_page: int = 4,
-        timeout: float = 180,
+        timeout: float = HELP_VIEW_TIMEOUT,
     ):
         super().__init__(timeout=timeout)
         self.ctx = ctx
@@ -465,6 +522,7 @@ class HelpListView(discord.ui.LayoutView):
     def _footer(self) -> str:
         return (
             f"- Page {self.index + 1}/{self.total_pages} "
+            f"| Closes after {int(HELP_VIEW_TIMEOUT)}s idle "
             f"| Requested by {self.ctx.author.display_name}"
         )
 
