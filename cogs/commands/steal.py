@@ -19,7 +19,7 @@ class Steal(commands.Cog):
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     @commands.has_permissions(manage_emojis=True)
-    @commands.bot_has_permissions(manage_emojis=True)
+    @bot_has_permissions(manage_emojis=True)
     async def steal(self, ctx, emote=None):
         if ctx.message.reference:
             ref_message = await ctx.channel.fetch_message(ctx.message.reference.message_id)

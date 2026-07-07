@@ -6,6 +6,7 @@ from discord.ext import commands
 import asyncio
 from datetime import timedelta
 from utils.cv2_compat import embed_to_view, embeds_to_view
+from utils.automod_helpers import automod_gate, log_automod_action
 
 class AntiCaps(commands.Cog):
     def __init__(self, bot):
@@ -68,31 +69,21 @@ class AntiCaps(commands.Cog):
         if message.author.bot:
             return
 
+        gate = await automod_gate(message, 'Anti caps')
+        if gate is None:
+            return
+
         guild = message.guild
         user = message.author
         channel = message.channel
-        guild_id = guild.id
 
-        if not await self.is_automod_enabled(guild_id) or not await self.is_anti_caps_enabled(guild_id):
-            return
-
-        if user == guild.owner or user == self.bot.user:
-            return
-
-        ignored_channels = await self.get_ignored_channels(guild_id)
-        if channel.id in ignored_channels:
-            return
-
-        ignored_roles = await self.get_ignored_roles(guild_id)
-        if any(role.id in ignored_roles for role in user.roles):
-            return
 
         if len(message.content) > 0:
             caps_count = sum(1 for c in message.content if c.isupper())
             caps_percentage = (caps_count / len(message.content)) * 100
 
             if caps_percentage > self.caps_threshold:
-                punishment = await self.get_punishment(guild_id)
+                punishment = gate.punishment
                 action_taken = None
                 reason = "Excessive Caps"
 
@@ -115,7 +106,11 @@ class AntiCaps(commands.Cog):
                     simple_embed.set_footer(text="Use the “automod logging” command to get automod logs if it is not enabled.", icon_url=self.bot.user.avatar.url)
                     await channel.send(view = embed_to_view(simple_embed), delete_after=30)
 
-                    await self.log_action(guild, user, channel, action_taken, reason)
+                    await log_automod_action(
+                    guild, user, channel, action_taken, reason,
+                    title='Automod Log: Anti caps',
+                    log_channel_id=gate.log_channel_id,
+                )
 
                 except discord.Forbidden:
                     pass

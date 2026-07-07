@@ -6,13 +6,15 @@ import discord
 from discord.ext import commands
 from utils import Paginator, DescriptionEmbedPaginator
 from utils.cv2_compat import embed_to_view, embeds_to_view
+from utils.security import get_security_gate
 
 class Block(commands.Cog):
   def __init__(self, bot):
     self.bot = bot
-    asyncio.create_task(self.set_db())
 
-  #@commands.Cog.listener()
+  async def cog_load(self) -> None:
+    await self.set_db()
+
   async def set_db(self):
     async with connect('block.db') as db:
         await db.execute('''
@@ -60,6 +62,7 @@ class Block(commands.Cog):
       else:
         await db.execute('INSERT INTO user_blacklist (user_id) VALUES (?)', (user.id,))
         await db.commit()
+        await get_security_gate().invalidate_blacklist(user_id=user.id)
         embed = discord.Embed(
           title=f"{emojis.TICK} User Blacklisted",
           description=f"{user.mention} has been added to the blacklist.",
@@ -82,6 +85,7 @@ class Block(commands.Cog):
       else:
         await db.execute('DELETE FROM user_blacklist WHERE user_id = ?', (user.id,))
         await db.commit()
+        await get_security_gate().invalidate_blacklist(user_id=user.id)
         embed = discord.Embed(
           title=f"{emojis.TICK} User Unblacklisted",
           description=f"{user.mention} has been removed from the blacklist.",
@@ -149,6 +153,7 @@ class Block(commands.Cog):
       else:
         await db.execute('INSERT INTO guild_blacklist (guild_id) VALUES (?)', (guild_id,))
         await db.commit()
+        await get_security_gate().invalidate_blacklist(guild_id=guild_id)
         embed = discord.Embed(
           title=f"{emojis.TICK} Guild Blacklisted",
           description=f"Guild with ID `{guild_id}` has been added to the blacklist.",
@@ -171,6 +176,7 @@ class Block(commands.Cog):
       else:
         await db.execute('DELETE FROM guild_blacklist WHERE guild_id = ?', (guild_id,))
         await db.commit()
+        await get_security_gate().invalidate_blacklist(guild_id=guild_id)
         embed = discord.Embed(
           title=f"{emojis.TICK} Guild Unblacklisted",
           description=f"Guild with ID `{guild_id}` has been removed from the blacklist.",

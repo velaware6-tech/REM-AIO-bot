@@ -7,6 +7,15 @@ import discord
 
 IS_COMPONENTS_V2 = 1 << 15
 
+FOOTER_BRAND = "REM ALL IN ONE BOT"
+
+_TONES = {
+    "success": ("✅", "Success"),
+    "error": ("❌", "Error"),
+    "warning": ("⚠️", "Warning"),
+    "info": ("ℹ️", "Info"),
+}
+
 
 def text(content: str) -> discord.ui.TextDisplay:
     return discord.ui.TextDisplay(content)
@@ -50,6 +59,12 @@ def layout_view(*children: discord.ui.Item, timeout: Optional[float] = 180) -> d
     return view
 
 
+def _tone_header(tone: str, title: str) -> str:
+    emoji, default = _TONES.get(tone, _TONES["info"])
+    label = (title or default).strip()
+    return f"## {emoji} {label}" if label else f"## {emoji}"
+
+
 def basic_panel(
     title: str,
     lines: Iterable[str],
@@ -74,25 +89,41 @@ def basic_panel(
 def success_panel(
     description: str,
     *,
-    title: str = "",
+    title: str = "Success",
     fields: Iterable[tuple[str, str]] = (),
     footer: str = "",
     actions: Iterable[discord.ui.Button] = (),
     timeout: Optional[float] = 180,
 ) -> discord.ui.LayoutView:
-    return response_panel(description, title=title, fields=fields, footer=footer, actions=actions, timeout=timeout)
+    return response_panel(
+        description,
+        title=title,
+        tone="success",
+        fields=fields,
+        footer=footer,
+        actions=actions,
+        timeout=timeout,
+    )
 
 
 def error_panel(
     description: str,
     *,
-    title: str = "",
+    title: str = "Error",
     fields: Iterable[tuple[str, str]] = (),
     footer: str = "",
     actions: Iterable[discord.ui.Button] = (),
     timeout: Optional[float] = 180,
 ) -> discord.ui.LayoutView:
-    return response_panel(description, title=title, fields=fields, footer=footer, actions=actions, timeout=timeout)
+    return response_panel(
+        description,
+        title=title,
+        tone="error",
+        fields=fields,
+        footer=footer,
+        actions=actions,
+        timeout=timeout,
+    )
 
 
 def info_panel(
@@ -104,33 +135,50 @@ def info_panel(
     actions: Iterable[discord.ui.Button] = (),
     timeout: Optional[float] = 180,
 ) -> discord.ui.LayoutView:
-    return response_panel(description, title=title, fields=fields, footer=footer, actions=actions, timeout=timeout)
+    return response_panel(
+        description,
+        title=title,
+        tone="info",
+        fields=fields,
+        footer=footer,
+        actions=actions,
+        timeout=timeout,
+    )
 
 
 def warning_panel(
     description: str,
     *,
-    title: str = "",
+    title: str = "Warning",
     fields: Iterable[tuple[str, str]] = (),
     footer: str = "",
     actions: Iterable[discord.ui.Button] = (),
     timeout: Optional[float] = 180,
 ) -> discord.ui.LayoutView:
-    return response_panel(description, title=title, fields=fields, footer=footer, actions=actions, timeout=timeout)
+    return response_panel(
+        description,
+        title=title,
+        tone="warning",
+        fields=fields,
+        footer=footer,
+        actions=actions,
+        timeout=timeout,
+    )
 
 
 def response_panel(
     description: str,
     *,
     title: str = "",
+    tone: str = "info",
     fields: Iterable[tuple[str, str]] = (),
     footer: str = "",
     actions: Iterable[discord.ui.Button] = (),
     timeout: Optional[float] = 180,
 ) -> discord.ui.LayoutView:
     parts: list[discord.ui.Item] = []
-    if title:
-        parts.append(text(f"### {title}"))
+    if title or tone != "info":
+        parts.append(text(_tone_header(tone, title)))
         parts.append(separator(visible=False))
     if description:
         parts.append(text(description))

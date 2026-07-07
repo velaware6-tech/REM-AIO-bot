@@ -6,18 +6,20 @@ from discord.ext import commands
 from utils.Tools import *
 from utils.config import BYPASS_IDS
 from utils.cv2_compat import embed_to_view, embeds_to_view
-from utils.database import open_connection
+from utils.database import get_anti_db
 
 class Nightmode(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        asyncio.create_task(self.initialize_db())
         self.ricky = BYPASS_IDS
         self.color = 0x000000  
 
+    async def cog_load(self) -> None:
+        await self.initialize_db()
+
     async def initialize_db(self):
-        self.db = await open_connection('anti.db')
+        self.db = await get_anti_db()
         await self.db.execute('''
             CREATE TABLE IF NOT EXISTS Nightmode (
                 guildId TEXT,

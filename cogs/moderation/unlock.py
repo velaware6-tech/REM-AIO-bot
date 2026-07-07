@@ -3,7 +3,8 @@ from utils import emojis
 import discord
 from discord.ext import commands
 from discord import ui
-from utils.cv2_compat import embed_to_view, embeds_to_view
+from utils.Tools import bot_has_permissions
+from utils.cv2_compat import embed_to_view, embeds_to_view, sync_panel_message
 
 class LockUnlockView(ui.View):
     def __init__(self, channel, author, ctx):
@@ -20,14 +21,7 @@ class LockUnlockView(ui.View):
         return True
 
     async def on_timeout(self):
-        for item in self.children:
-            if item.label != "Delete":
-                item.disabled = True
-        if self.message:
-            try:
-                await self.message.edit(view=self)
-            except Exception:
-                pass
+        await sync_panel_message(self, skip_labels=("Delete",))
             
 
     @ui.button(label="Lock", style=discord.ButtonStyle.danger)
@@ -43,10 +37,7 @@ class LockUnlockView(ui.View):
         embed.set_author(name=f"Successfully Locked {self.channel.name}")
         await self.message.edit(view = embed_to_view(embed, view = self))
 
-        for item in self.children:
-            if item.label != "Delete":
-                item.disabled = True
-        await self.message.edit(view=self)
+        await sync_panel_message(self, skip_labels=("Delete",))
 
     @ui.button(style=discord.ButtonStyle.gray, emoji=f"{emojis.DELETE}")
     async def delete(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -64,7 +55,7 @@ class Unlock(commands.Cog):
         usage="unlock <channel>",
         aliases=["unlockchannel"])
     @commands.has_permissions(manage_roles=True)
-    @commands.bot_has_permissions(manage_roles=True)
+    @bot_has_permissions(manage_roles=True)
     async def unlock_command(self, ctx, channel: discord.TextChannel = None):
         channel = channel or ctx.channel 
         if channel.permissions_for(ctx.guild.default_role).send_messages is True:

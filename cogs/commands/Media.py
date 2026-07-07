@@ -222,7 +222,10 @@ class Media(commands.Cog):
                     await ctx.reply(view = embed_to_view(embed))
                     return
 
-        users = [self.client.get_user(user_id).mention for user_id, in result]
+        users = []
+        for user_id, in result:
+            user = self.client.get_user(user_id) or await self.client.fetch_user(user_id)
+            users.append(user.mention if user else f"`{user_id}`")
         user_mentions = "\n".join(users)
 
         embed = discord.Embed(

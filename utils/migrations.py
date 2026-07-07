@@ -259,4 +259,123 @@ async def run_startup_migrations() -> None:
         ],
     )
 
+    await execute_many(
+        "blword.db",
+        [
+            """
+            CREATE TABLE IF NOT EXISTS blacklist (
+                guild_id TEXT,
+                word TEXT,
+                PRIMARY KEY (guild_id, word)
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS bypass (
+                guild_id TEXT,
+                user_id INTEGER,
+                PRIMARY KEY (guild_id, user_id)
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS bypass_roles (
+                guild_id TEXT,
+                role_id INTEGER,
+                PRIMARY KEY (guild_id, role_id)
+            )
+            """,
+        ],
+    )
+
+    await execute_many(
+        "logging.db",
+        [
+            """
+            CREATE TABLE IF NOT EXISTS log_channels (
+                guild_id INTEGER,
+                log_type TEXT,
+                channel_id INTEGER
+            )
+            """,
+        ],
+    )
+
+    await execute_many(
+        "fastgreet.db",
+        [
+            """
+            CREATE TABLE IF NOT EXISTS greet_channels (
+                guild_id INTEGER,
+                channel_id INTEGER,
+                PRIMARY KEY (guild_id, channel_id)
+            )
+            """,
+        ],
+    )
+
+    await execute_many(
+        "messages.db",
+        [
+            """
+            CREATE TABLE IF NOT EXISTS messages (
+                guild_id INTEGER,
+                user_id INTEGER,
+                date TEXT,
+                count INTEGER
+            )
+            """,
+        ],
+    )
+
+    await execute_many(
+        "invite_tracker.db",
+        [
+            """
+            CREATE TABLE IF NOT EXISTS invites (
+                guild_id TEXT,
+                inviter_id TEXT,
+                invite_code TEXT,
+                uses INTEGER DEFAULT 0,
+                PRIMARY KEY(guild_id, invite_code)
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS invite_stats (
+                guild_id TEXT,
+                user_id TEXT,
+                invites INTEGER DEFAULT 0,
+                fake INTEGER DEFAULT 0,
+                leaves INTEGER DEFAULT 0,
+                rejoins INTEGER DEFAULT 0,
+                PRIMARY KEY (guild_id, user_id)
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS invite_settings (
+                guild_id TEXT PRIMARY KEY,
+                enabled INTEGER DEFAULT 0
+            )
+            """,
+        ],
+    )
+
+    await execute_many(
+        "rr.db",
+        [
+            """
+            CREATE TABLE IF NOT EXISTS reaction_roles (
+                guild_id INTEGER,
+                message_id INTEGER,
+                emoji TEXT,
+                role_id INTEGER
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS rr_settings (
+                guild_id INTEGER PRIMARY KEY,
+                dm_enabled INTEGER DEFAULT 1
+            )
+            """,
+        ],
+    )
+
     log.info("Startup database migrations completed.")

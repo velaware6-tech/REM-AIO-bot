@@ -1,4 +1,4 @@
-from utils.database import open_connection
+from utils.database import get_anti_db
 from utils import emojis
 from utils.components_v2 import success_panel, error_panel, info_panel
 
@@ -11,10 +11,12 @@ from utils.Tools import *
 class Unwhitelist(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        asyncio.create_task(self.initialize_db())
+
+    async def cog_load(self) -> None:
+        await self.initialize_db()
 
     async def initialize_db(self):
-        self.db = await open_connection('anti.db')
+        self.db = await get_anti_db()
 
     @commands.hybrid_command(name='unwhitelist', aliases=['unwl'], help="Unwhitelist a user from antinuke")
     @commands.has_permissions(administrator=True)
@@ -24,7 +26,7 @@ class Unwhitelist(commands.Cog):
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     @commands.guild_only()
     async def unwhitelist(self, ctx, member: discord.Member = None):
-        if ctx.guild.member_count < 2:
+        if ctx.guild.member_count < 30:
             return await ctx.send(view=error_panel(f"{emojis.CROSSICON} | Your Server Doesn't Meet My 30 Member Criteria"))
 
         async with self.db.execute(

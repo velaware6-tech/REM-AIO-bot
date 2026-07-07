@@ -461,7 +461,7 @@ class Extra(commands.Cog):
   @ignore_check()
   @commands.cooldown(1, 3, commands.BucketType.user)
   @commands.has_permissions(view_audit_log=True)
-  @commands.bot_has_permissions(view_audit_log=True)
+  @bot_has_permissions(view_audit_log=True)
   async def list_ban(self, ctx):
     bans = [member async for member in ctx.guild.bans()]
     if len(bans) == 0:

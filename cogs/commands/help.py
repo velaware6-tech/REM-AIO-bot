@@ -1,20 +1,15 @@
 import discord
 from discord.ext import commands
-from discord import app_commands, Interaction
 from difflib import get_close_matches
-from contextlib import suppress
 from core import Context
 from core.rem import Rem
 from core.Cog import Cog
 from utils.Tools import getConfig
-from itertools import chain
-import json
-from utils import help as vhelp
-from utils import Paginator, DescriptionEmbedPaginator, FieldPagePaginator, TextPaginator
 import asyncio
 from utils.config import serverLink
 from utils.Tools import *
-from utils.cv2_compat import embed_to_view, embeds_to_view
+from utils import help as vhelp
+from utils.components_v2 import error_panel, info_panel
 
 color = 0x185fe5
 
@@ -58,20 +53,20 @@ class HelpCommand(commands.HelpCommand):
     cmds = (str(cmd) for cmd in self.context.bot.walk_commands())
     matches = get_close_matches(string, cmds)
 
-    embed = discord.Embed(
-        title="",
-        description=f"Command not found with the name `{string}`.",
-        color=discord.Color.red()
-    )
-    
-    embed.set_author(name="Command Not Found", icon_url=self.context.bot.user.avatar.url)
-    embed.set_footer(text=f"Requested By {ctx.author}",
-                       icon_url=ctx.author.avatar.url if ctx.author.avatar else ctx.author.default_avatar.url)
+    description = f"Command not found with the name `{string}`."
+    fields = []
     if matches:
         match_list = "\n".join([f"{index}. `{match}`" for index, match in enumerate(matches, start=1)])
-        embed.add_field(name="Did you mean:", value=match_list, inline=True)
+        fields.append(("Did you mean", match_list))
 
-    await ctx.reply(view = embed_to_view(embed))
+    await ctx.reply(
+        view=error_panel(
+            description,
+            title="Command Not Found",
+            fields=fields,
+            footer=f"Requested by {ctx.author}",
+        )
+    )
 
   async def send_bot_help(self, mapping):
     ctx = self.context
@@ -110,21 +105,21 @@ class HelpCommand(commands.HelpCommand):
       await self.send_ignore_message(ctx, "command")
       return
 
-    sonu = f">>> {command.help}" if command.help else '>>> No Help Provided...'
-    embed = discord.Embed(
-        description=f"""```xml
-<[] = optional | ‹› = required\nDon't type these while using Commands>```\n{sonu}""",
-        color=color)
-    alias = ' | '.join(command.aliases)
+    sonu = command.help if command.help else "No help provided."
+    alias = " | ".join(command.aliases) if command.aliases else "No aliases"
 
-    embed.add_field(name="**Aliases**",
-                      value=f"{alias}" if command.aliases else "No Aliases",
-                      inline=False)
-    embed.add_field(name="**Usage**",
-                      value=f"`{self.context.prefix}{command.signature}`\n")
-    embed.set_author(name=f"{command.qualified_name.title()} Command",
-                       icon_url=self.context.bot.user.display_avatar.url)
-    await self.context.reply(view = embed_to_view(embed), mention_author=False)
+    await self.context.reply(
+        view=info_panel(
+            f"```xml\n<[] = optional | ‹› = required\nDon't type these while using commands>\n```\n{sonu}",
+            title=f"{command.qualified_name.title()} Command",
+            fields=[
+                ("Aliases", alias),
+                ("Usage", f"`{self.context.prefix}{command.signature}`"),
+            ],
+            footer=f"Requested by {ctx.author}",
+        ),
+        mention_author=False,
+    )
 
   def get_command_signature(self, command: commands.Command) -> str:
     parent = command.full_parent_name
@@ -159,22 +154,20 @@ class HelpCommand(commands.HelpCommand):
 
     entries = [
         (
-            f"➜ `{self.context.prefix}{cmd.qualified_name}`\n",
-            f"{cmd.short_doc if cmd.short_doc else ''}\n\u200b"
+            f"➜ `{self.context.prefix}{cmd.qualified_name}`",
+            f"{cmd.short_doc if cmd.short_doc else ''}\n\u200b",
         )
         for cmd in group.commands
-      ]
+    ]
 
-    count = len(group.commands)
-
-    paginator = Paginator(source=FieldPagePaginator(
+    view = vhelp.HelpListView(
+      ctx,
+      title=f"{group.qualified_name.title()} [{len(group.commands)}]",
+      description="< > Duty | [ ] Optional",
       entries=entries,
-      title=f"{group.qualified_name.title()} [{count}]",
-      description="< > Duty | [ ] Optional\n",
-      color=color,
-      per_page=4),
-                          ctx=self.context)
-    await paginator.paginate()
+      per_page=4,
+    )
+    await ctx.reply(view=view, mention_author=False)
 
   async def send_cog_help(self, cog):
     ctx = self.context
@@ -190,22 +183,23 @@ class HelpCommand(commands.HelpCommand):
 
     entries = [(
       f"➜ `{self.context.prefix}{cmd.qualified_name}`",
-      f"{cmd.short_doc if cmd.short_doc else ''}"
-      f"\n\u200b",
+      f"{cmd.short_doc if cmd.short_doc else ''}\n\u200b",
     ) for cmd in cog.get_commands()]
-    paginator = Paginator(source=FieldPagePaginator(
-      entries=entries,
+
+    view = vhelp.HelpListView(
+      ctx,
       title=f"{cog.qualified_name.title()} ({len(cog.get_commands())})",
-      description="< > Duty | [ ] Optional\n\n",
-      color=color,
-      per_page=4),
-                          ctx=self.context)
-    await paginator.paginate()
+      description="< > Duty | [ ] Optional",
+      entries=entries,
+      per_page=4,
+    )
+    await ctx.reply(view=view, mention_author=False)
 
 
 class Help(Cog, name="help"):
 
   def __init__(self, client: Rem):
+    self.client = client
     self._original_help_command = client.help_command
     attributes = {
       'name': "help",
@@ -217,4 +211,4 @@ class Help(Cog, name="help"):
     client.help_command.cog = self
 
   async def cog_unload(self):
-    self.help_command = self._original_help_command
+    self.client.help_command = self._original_help_command

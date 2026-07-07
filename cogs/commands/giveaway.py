@@ -5,7 +5,6 @@ from discord.ext import commands, tasks
 import datetime, pytz, time as t
 from discord.ui import Button, Select, View
 import random, typing
-import sqlite3
 import asyncio
 import discord, logging
 from discord.utils import get
@@ -17,11 +16,8 @@ from utils.cv2_compat import embed_to_view, embeds_to_view
 db_folder = 'db'
 db_file = 'giveaways.db'
 db_path = os.path.join(db_folder, db_file)
-connection = sqlite3.connect(db_path)
 
-cursor = connection.cursor()
-
-cursor.execute('''CREATE TABLE IF NOT EXISTS Giveaway (
+GIVEAWAY_SCHEMA = '''CREATE TABLE IF NOT EXISTS Giveaway (
                     guild_id INTEGER,
                     host_id INTEGER,
                     start_time TIMESTAMP,
@@ -31,10 +27,7 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS Giveaway (
                     message_id INTEGER,
                     channel_id INTEGER,
                     PRIMARY KEY (guild_id, message_id)
-                )''')
-
-connection.commit()
-connection.close()
+                )'''
 
 def convert(time):
     pos = ["s","m","h","d"]
@@ -63,9 +56,12 @@ class Giveaway(commands.Cog):
         self.bot = bot
 
     async def cog_load(self) -> None:
+        os.makedirs(db_folder, exist_ok=True)
         self.connection = await open_connection(db_path)
+        await self.connection.execute(GIVEAWAY_SCHEMA)
+        await self.connection.commit()
         self.cursor = await self.connection.cursor()
-        await self.check_for_ended_giveaways() 
+        await self.check_for_ended_giveaways()
         self.GiveawayEnd.start()
 
     async def cog_unload(self) -> None:
@@ -395,11 +391,24 @@ class Giveaway(commands.Cog):
             await message.delete()
             return
 
+        if not message.reactions:
+            await ctx.send(view=embed_to_view(discord.Embed(
+                title=f"{emojis.ICONS_WARNING} Reroll Failed",
+                description="No reactions found on this giveaway message.",
+                color=0x000000,
+            )))
+            return
+
+        prize = "the"
+        if message.embeds and message.embeds[0].title:
+            prize = message.embeds[0].title.replace(str(emojis.GIVEAWAY), "").strip() or prize
+
         users = [i.id async for i in message.reactions[0].users()]
-        users.remove(self.bot.user.id)
+        if self.bot.user.id in users:
+            users.remove(self.bot.user.id)
 
         if len(users) < 1:
-            await message.reply(f"No one won the **{re[5]}** giveaway, due to not enough participants.")
+            await message.reply(f"No one won the **{prize}** giveaway, due to not enough participants.")
             return
 
         winners = random.sample(users, k=1)

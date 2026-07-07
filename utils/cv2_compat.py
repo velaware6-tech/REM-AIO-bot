@@ -6,7 +6,16 @@ from typing import Any, Optional
 
 import discord
 
-__all__ = ("Panel", "cv2_send", "embed_to_view", "embeds_to_view")
+__all__ = (
+    "Panel",
+    "PanelLayoutView",
+    "cv2_send",
+    "embed_to_view",
+    "embeds_to_view",
+    "panel_with_actions",
+    "send_panel",
+    "sync_panel_message",
+)
 
 _MAX_TEXT_DISPLAY = 3800
 
@@ -106,13 +115,114 @@ def embeds_to_view(
     return layout
 
 
+def _has_interactive_children(source: Optional[discord.ui.View]) -> bool:
+    if source is None:
+        return False
+    for child in list(getattr(source, "children", ())):
+        if isinstance(child, discord.ui.Button) and not child.url:
+            return True
+        if isinstance(child, (discord.ui.Select, discord.ui.UserSelect, discord.ui.RoleSelect, discord.ui.ChannelSelect, discord.ui.MentionableSelect)):
+            return True
+    return False
+
+
+class PanelLayoutView(discord.ui.LayoutView):
+    """LayoutView that merges an embed panel with interactive controls."""
+
+    def __init__(
+        self,
+        embed: Optional[discord.Embed],
+        controls: Optional[discord.ui.View] = None,
+        *,
+        timeout: Optional[float] = None,
+    ) -> None:
+        resolved_timeout = timeout if timeout is not None else getattr(controls, "timeout", 180)
+        super().__init__(timeout=resolved_timeout)
+        self.controls = controls
+
+        children: list[discord.ui.Item] = []
+        if embed is not None:
+            panel = embeds_to_view([embed])
+            children.extend(list(panel.children[0].children))
+        elif not controls or not controls.children:
+            children.append(discord.ui.TextDisplay("\u200b"))
+
+        if controls and controls.children:
+            interactive = list(controls.children)
+            if interactive:
+                children.append(discord.ui.Separator())
+                for index in range(0, len(interactive), 5):
+                    children.append(discord.ui.ActionRow(*interactive[index : index + 5]))
+
+        self.add_item(discord.ui.Container(*children))
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if self.controls and hasattr(self.controls, "interaction_check"):
+            return await self.controls.interaction_check(interaction)
+        return True
+
+    async def on_timeout(self) -> None:
+        if self.controls and hasattr(self.controls, "on_timeout"):
+            await self.controls.on_timeout()
+
+
+def panel_with_actions(
+    embed: Optional[discord.Embed],
+    controls: Optional[discord.ui.View] = None,
+    *,
+    timeout: Optional[float] = None,
+) -> PanelLayoutView:
+    return PanelLayoutView(embed, controls, timeout=timeout)
+
+
 def embed_to_view(
     embed: Optional[discord.Embed],
     view: Optional[discord.ui.View] = None,
     *,
     timeout: Optional[float] = None,
 ) -> discord.ui.LayoutView:
+    if view is not None and embed is not None:
+        view.panel_embed = embed
+    if _has_interactive_children(view):
+        return panel_with_actions(embed, view, timeout=timeout)
     return embeds_to_view([embed] if embed is not None else [], view=view, timeout=timeout)
+
+
+async def send_panel(
+    ctx,
+    embed: discord.Embed,
+    controls: discord.ui.View,
+    **kwargs,
+) -> discord.Message:
+    controls.panel_embed = embed
+    message = await ctx.send(view=panel_with_actions(embed, controls), **kwargs)
+    controls.message = message
+    return message
+
+
+async def sync_panel_message(
+    controls: discord.ui.View,
+    *,
+    embed: Optional[discord.Embed] = None,
+    disable: bool = True,
+    skip_labels: tuple[str, ...] = (),
+) -> None:
+    if disable:
+        for item in controls.children:
+            label = getattr(item, "label", None)
+            if label in skip_labels:
+                continue
+            item.disabled = True
+
+    message = getattr(controls, "message", None)
+    panel_embed = embed or getattr(controls, "panel_embed", None)
+    if not message or not panel_embed:
+        return
+
+    try:
+        await message.edit(view=panel_with_actions(panel_embed, controls))
+    except Exception:
+        pass
 
 
 class Panel:

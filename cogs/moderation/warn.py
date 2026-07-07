@@ -6,7 +6,7 @@ from discord.ext import commands
 from discord import ui
 import asyncio
 from utils.Tools import *
-from utils.cv2_compat import embed_to_view, embeds_to_view
+from utils.cv2_compat import embed_to_view, embeds_to_view, sync_panel_message
 
 
 class WarnView(ui.View):
@@ -25,11 +25,7 @@ class WarnView(ui.View):
     async def on_timeout(self):
         for item in self.children:
             item.disabled = True
-        if self.message:
-            try:
-                await self.message.edit(view=self)
-            except Exception:
-                pass
+        await sync_panel_message(self)
 
     @ui.button(style=discord.ButtonStyle.gray, emoji=f"{emojis.DELETE}")
     async def delete(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -93,7 +89,7 @@ class Warn(commands.Cog):
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     @commands.guild_only()
     @commands.has_permissions(moderate_members=True)
-    #@commands.bot_has_permissions(manage_messages=True)
+    @bot_has_permissions(manage_messages=True, send_messages=True)
     async def warn(self, ctx, user: discord.Member, *, reason=None):
         if user == ctx.author:
             return await ctx.reply("You cannot warn yourself.")
@@ -158,6 +154,7 @@ class Warn(commands.Cog):
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     @commands.guild_only()
     @commands.has_permissions(moderate_members=True)
+    @bot_has_permissions(manage_messages=True, send_messages=True)
     async def clearwarns(self, ctx, user: discord.Member):
         try:
             await self.reset_warns(ctx.guild.id, user.id)

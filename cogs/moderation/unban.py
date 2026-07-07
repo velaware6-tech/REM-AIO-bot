@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 from discord import ui
 from utils.Tools import *
-from utils.cv2_compat import embed_to_view, embeds_to_view
+from utils.cv2_compat import embed_to_view, embeds_to_view, sync_panel_message
 
 class BanView(ui.View):
     def __init__(self, user, author):
@@ -23,11 +23,7 @@ class BanView(ui.View):
     async def on_timeout(self):
         for item in self.children:
             item.disabled = True
-        if self.message:
-            try:
-                await self.message.edit(view=self)
-            except Exception:
-                pass
+        await sync_panel_message(self)
 
     @ui.button(label="Ban", style=discord.ButtonStyle.danger)
     async def ban(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -55,7 +51,7 @@ class AlreadyUnbannedView(ui.View):
         for item in self.children:
             item.disabled = True
         if self.message:
-            await self.message.edit(view=self)
+            await sync_panel_message(self)
 
     @ui.button(label="Ban", style=discord.ButtonStyle.danger)
     async def ban(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -132,7 +128,7 @@ class Unban(commands.Cog):
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     @commands.guild_only()
     @commands.has_permissions(ban_members=True)
-    @commands.bot_has_permissions(ban_members=True)
+    @bot_has_permissions(ban_members=True)
     async def unban(self, ctx, user: discord.User, *, reason=None):
         bans = [entry async for entry in ctx.guild.bans()]
         if not any(ban_entry.user.id == user.id for ban_entry in bans):

@@ -1,16 +1,100 @@
 from __future__ import annotations
-from utils import emojis
 
-import asyncio
 from typing import TYPE_CHECKING, Any, Dict, Optional
+
 import discord
-from discord.ext import commands
-from discord.ext import menus
+from discord.ext import commands, menus
 from discord.ext.commands import Context
-from discord import Interaction, ButtonStyle
+from discord import ButtonStyle, Interaction
+
+from utils import emojis
+from utils.cv2_compat import panel_with_actions, sync_panel_message
+
+if TYPE_CHECKING:
+    pass
 
 
-class Paginator(discord.ui.View):
+class _PaginatorControls(discord.ui.View):
+    def __init__(self, paginator: "Paginator"):
+        super().__init__(timeout=180)
+        self.paginator = paginator
+        self.panel_embed: Optional[discord.Embed] = None
+        self.message: Optional[discord.Message] = None
+        self._fill_items()
+
+    def _fill_items(self) -> None:
+        self.clear_items()
+        source = self.paginator.source
+        if not source.is_paginating():
+            return
+
+        max_pages = source.get_max_pages()
+        use_last_and_first = max_pages is not None and max_pages >= 2
+        page = self.paginator.current_page
+
+        if use_last_and_first:
+            self.add_item(self._button("first", str(emojis.REWIND1), page == 0))
+        self.add_item(self._button("prev", str(emojis.NEXT), page == 0))
+        self.add_item(self._button("stop", str(emojis.DELETE), style=ButtonStyle.danger))
+        self.add_item(
+            self._button(
+                "next",
+                str(emojis.ICONS_NEXT),
+                max_pages is not None and (page + 1) >= max_pages,
+            )
+        )
+        if use_last_and_first:
+            self.add_item(
+                self._button(
+                    "last",
+                    str(emojis.FORWARD),
+                    max_pages is not None and (page + 1) >= max_pages,
+                )
+            )
+
+    def _button(
+        self,
+        action: str,
+        emoji: str,
+        disabled: bool = False,
+        *,
+        style: ButtonStyle = ButtonStyle.secondary,
+    ) -> discord.ui.Button:
+        button = discord.ui.Button(
+            emoji=emoji,
+            style=style,
+            disabled=disabled,
+            custom_id=f"paginator:{action}",
+        )
+
+        async def callback(interaction: Interaction) -> None:
+            if not await self.paginator.interaction_check(interaction):
+                return
+
+            if action == "first":
+                await self.paginator.show_page(interaction, 0)
+            elif action == "prev":
+                await self.paginator.show_checked_page(interaction, self.paginator.current_page - 1)
+            elif action == "stop":
+                await interaction.response.defer()
+                await interaction.delete_original_response()
+                self.stop()
+            elif action == "next":
+                await self.paginator.show_checked_page(interaction, self.paginator.current_page + 1)
+            elif action == "last":
+                max_pages = self.paginator.source.get_max_pages()
+                if max_pages:
+                    await self.paginator.show_page(interaction, max_pages - 1)
+
+        button.callback = callback
+        return button
+
+    async def on_timeout(self) -> None:
+        await sync_panel_message(self, disable=True)
+
+
+class Paginator:
+    """CV2 paginator that renders embed pages as Component v2 panels."""
 
     def __init__(
         self,
@@ -19,69 +103,40 @@ class Paginator(discord.ui.View):
         ctx: Context | Interaction,
         check_embeds: bool = True,
     ):
-        super().__init__()
         self.source: menus.PageSource = source
         self.check_embeds: bool = check_embeds
         self.ctx = ctx
         self.message: Optional[discord.Message] = None
         self.current_page: int = 0
-        self.clear_items()
-        self.fill_items()
+        self.controls = _PaginatorControls(self)
 
-    def fill_items(self) -> None:
-
-        if self.source.is_paginating():
-            max_pages = self.source.get_max_pages()
-            use_last_and_first = max_pages is not None and max_pages >= 2
-            if use_last_and_first:
-                self.add_item(self.first_page_button)
-            self.add_item(self.previous_page_button)
-            self.add_item(self.stop_button)
-            self.add_item(self.next_page_button)
-            if use_last_and_first:
-                self.add_item(self.last_page_button)
-            #self.add_item(self.stop_button)
-
-    async def _get_kwargs_from_page(self, page: int) -> Dict[str, Any]:
-        value = await discord.utils.maybe_coroutine(self.source.format_page,
-                                                    self, page)
-        if isinstance(value, dict):
-            return value
-        elif isinstance(value, str):
-            return {'content': value, 'embed': None}
-        elif isinstance(value, discord.Embed):
-            return {'embed': value, 'content': None}
-        else:
-            return {}
-
-    async def show_page(self, interaction: discord.Interaction,
-                        page_number: int) -> None:
+    async def _get_page_embed(self, page_number: int) -> discord.Embed:
         page = await self.source.get_page(page_number)
+        value = await discord.utils.maybe_coroutine(self.source.format_page, self, page)
+        if isinstance(value, discord.Embed):
+            return value
+        if isinstance(value, str):
+            return discord.Embed(description=value, color=0x000000)
+        if isinstance(value, dict) and value.get("embed"):
+            return value["embed"]
+        return discord.Embed(description="\u200b", color=0x000000)
+
+    def _panel_view(self, page_number: int, embed: discord.Embed) -> discord.ui.LayoutView:
+        self.controls.panel_embed = embed
+        self.controls._fill_items()
+        return panel_with_actions(embed, self.controls, timeout=self.controls.timeout)
+
+    async def show_page(self, interaction: Interaction, page_number: int) -> None:
         self.current_page = page_number
-        kwargs = await self._get_kwargs_from_page(page)
-        self._update_labels(page_number)
-        if kwargs:
-            if interaction.response.is_done():
-                if self.message:
-                    await self.message.edit(**kwargs, view=self)
-            else:
-                await interaction.response.edit_message(**kwargs, view=self)
+        embed = await self._get_page_embed(page_number)
+        view = self._panel_view(page_number, embed)
+        if interaction.response.is_done():
+            if self.message:
+                await self.message.edit(view=view)
+        else:
+            await interaction.response.edit_message(view=view)
 
-    def _update_labels(self, page_number: int) -> None:
-        self.first_page_button.disabled = page_number == 0
-        self.next_page_button.disabled = False
-        self.previous_page_button.disabled = False
-
-        max_pages = self.source.get_max_pages()
-        if max_pages is not None:
-            self.last_page_button.disabled = (page_number + 1) >= max_pages
-            if (page_number + 1) >= max_pages:
-                self.next_page_button.disabled = True
-            if page_number == 0:
-                self.previous_page_button.disabled = True
-
-    async def show_checked_page(self, interaction: discord.Interaction,
-                                page_number: int) -> None:
+    async def show_checked_page(self, interaction: Interaction, page_number: int) -> None:
         max_pages = self.source.get_max_pages()
         try:
             if max_pages is None:
@@ -91,123 +146,50 @@ class Paginator(discord.ui.View):
         except IndexError:
             pass
 
-    async def interaction_check(self,
-                                interaction: discord.Interaction) -> bool:
+    async def interaction_check(self, interaction: Interaction) -> bool:
         if isinstance(self.ctx, Interaction):
             if interaction.user and interaction.user.id in (
-                    self.ctx.client.owner_id, self.ctx.user.id):
+                self.ctx.client.owner_id,
+                self.ctx.user.id,
+            ):
                 return True
-            await interaction.response.send_message("Uh oh! That message doesn't belong to you. You must run this command to interact with it.",
-                ephemeral=True)
+            await interaction.response.send_message(
+                "Uh oh! That message doesn't belong to you. You must run this command to interact with it.",
+                ephemeral=True,
+            )
             return False
-        if interaction.user and interaction.user.id in (self.ctx.bot.owner_id,
-                                                        self.ctx.author.id):
+
+        if interaction.user and interaction.user.id in (
+            self.ctx.bot.owner_id,
+            self.ctx.author.id,
+        ):
             return True
-        await interaction.response.send_message("Uh oh! That message doesn't belong to you. You must run this command to interact with it.",
-            ephemeral=True)
+
+        await interaction.response.send_message(
+            "Uh oh! That message doesn't belong to you. You must run this command to interact with it.",
+            ephemeral=True,
+        )
         return False
 
-    async def on_timeout(self) -> None:
-        if self.message:
-            for child in self.children:
-                if isinstance(child, discord.ui.Button):
-                    child.disabled = True
-                    try:
-                        await self.message.edit(view=self)
-                    except Exception as e:
-                        print(e)
-            
+    async def paginate(
+        self,
+        *,
+        content: Optional[str] = None,
+        ephemeral: bool = False,
+        **kwargs,
+    ) -> None:
+        await self.source._prepare_once()
+        embed = await self._get_page_embed(0)
+        view = self._panel_view(0, embed)
 
-    async def on_error(self, interaction: discord.Interaction,
-                       error: Exception, item: discord.ui.Item) -> None:
-        if interaction.response.is_done():
-            await interaction.followup.send('An unknown error occurred, sorry',
-                                            ephemeral=True)
-        else:
-            await interaction.response.send_message(
-                'An unknown error occurred, sorry', ephemeral=True)
-
-    def update_styles(self, **kwargs):
-        """
-        Update the button styles and emojis
-        """
-
-        # Update the button emojis
-        self.first_page_button.emoji = kwargs.get('first_button_emoji') or f'{emojis.REWIND1}'
-        self.previous_page_button.emoji = kwargs.get(
-            'previous_button_emoji') or f'{emojis.NEXT}'
-        self.next_page_button.emoji = kwargs.get('next_button_emoji') or f'{emojis.ICONS_NEXT}'
-        self.last_page_button.emoji = kwargs.get('last_button_emoji') or f'{emojis.FORWARD}'
-        self.stop_button.emoji = kwargs.get(
-            'stop_button_emoji') or f'{emojis.DELETE}'
-
-        # Update the Button Styles
-        self.first_page_button.style = kwargs.get(
-            'first_button_style') or ButtonStyle.secondary
-        self.previous_page_button.style = kwargs.get(
-            'previous_button_style') or ButtonStyle.secondary
-        self.stop_button.style = kwargs.get(
-            'stop_button_style') or ButtonStyle.red
-        self.next_page_button.style = kwargs.get(
-            'next_button_style') or ButtonStyle.secondary
-        self.last_page_button.style = kwargs.get(
-            'last_button_style') or ButtonStyle.secondary
-
-    async def paginate(self,
-                       *,
-                       content: Optional[str] = None,
-                       ephemeral: bool = False,
-                       **kwargs) -> None:
-        self.update_styles(**kwargs)
         if isinstance(self.ctx, Interaction):
-            await self.source._prepare_once()
-            page = await self.source.get_page(0)
-            kwargs = await self._get_kwargs_from_page(page)
-            if content:
-                kwargs.setdefault('content', content)
-            self._update_labels(0)
             self.message = await self.ctx.response.send_message(
-                **kwargs, view=self, ephemeral=ephemeral)
+                content=content,
+                view=view,
+                ephemeral=ephemeral,
+            )
+            self.controls.message = self.message
             return
 
-        await self.source._prepare_once()
-        page = await self.source.get_page(0)
-        kwargs = await self._get_kwargs_from_page(page)
-        if content:
-            kwargs.setdefault('content', content)
-        self._update_labels(0)
-        self.message = await self.ctx.send(**kwargs,
-                                           view=self,
-                                           ephemeral=ephemeral)
-
-    @discord.ui.button()
-    async def first_page_button(self, interaction: discord.Interaction,
-                                button: discord.ui.Button):
-        """Go to the first page"""
-        await self.show_page(interaction, 0)
-
-    @discord.ui.button()
-    async def previous_page_button(self, interaction: discord.Interaction,
-                                   button: discord.ui.Button):
-        """Go to the previous page"""
-        await self.show_checked_page(interaction, self.current_page - 1)
-
-    @discord.ui.button()
-    async def stop_button(self, interaction: discord.Interaction,
-                          button: discord.ui.Button):
-        """Stops the pagination session."""
-        await interaction.response.defer()
-        await interaction.delete_original_response()
-        self.stop()
-
-    @discord.ui.button()
-    async def next_page_button(self, interaction: discord.Interaction,
-                               button: discord.ui.Button):
-        """Go to the next page"""
-        await self.show_checked_page(interaction, self.current_page + 1)
-
-    @discord.ui.button()
-    async def last_page_button(self, interaction: discord.Interaction,
-                               button: discord.ui.Button):
-        """Go to the last page"""
-        await self.show_page(interaction, self.source.get_max_pages() - 1)
+        self.message = await self.ctx.send(content=content, view=view, ephemeral=ephemeral)
+        self.controls.message = self.message

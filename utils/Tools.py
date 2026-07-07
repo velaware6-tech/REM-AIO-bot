@@ -5,6 +5,7 @@ import discord
 from discord.ext import commands
 from utils.config import BYPASS_IDS
 from utils.database import connect
+from utils.security import get_security_gate
 
 async def setup_db():
   async with connect('prefix.db') as db:
@@ -18,10 +19,7 @@ async def setup_db():
 
 
 async def is_topcheck_enabled(guild_id: int):
-    async with connect('topcheck.db') as db:
-        async with db.execute("SELECT enabled FROM topcheck WHERE guild_id = ?", (guild_id,)) as cursor:
-            row = await cursor.fetchone()
-            return row is not None and row[0] == 1
+    return await get_security_gate().is_topcheck_enabled(guild_id)
             
 
 
@@ -74,15 +72,8 @@ def updateignore(guild_id, data):
 
 
 async def getConfig(guildID):
-  async with connect('prefix.db') as db:
-    async with db.execute("SELECT prefix FROM prefixes WHERE guild_id = ?", (guildID,)) as cursor:
-      row = await cursor.fetchone()
-      if row:
-        return {"prefix": row[0]}
-      else:
-        defaultConfig = {"prefix": ">"}
-        await updateConfig(guildID, defaultConfig)
-        return defaultConfig
+  prefix = await get_security_gate().get_prefix(guildID)
+  return {"prefix": prefix}
 
 async def updateConfig(guildID, data):
   async with connect('prefix.db') as db:
@@ -91,6 +82,7 @@ async def updateConfig(guildID, data):
       (guildID, data["prefix"])
     )
     await db.commit()
+  await get_security_gate().invalidate_prefix(guildID)
 
 
 
@@ -105,71 +97,22 @@ def blacklist_check():
     if ctx.guild is None:
       return True
 
-    async with connect('block.db') as db:
-      cursor = await db.execute("SELECT 1 FROM user_blacklist WHERE user_id = ?", (str(ctx.author.id),))
-      user_blacklisted = await cursor.fetchone()
-      if user_blacklisted:
-        return False
-
-      cursor = await db.execute("SELECT 1 FROM guild_blacklist WHERE guild_id = ?", (str(ctx.guild.id),))
-      guild_blacklisted = await cursor.fetchone()
-      if guild_blacklisted:
-        return False
-
-    return True
+    decision = await get_security_gate().check_blacklist(ctx.author.id, ctx.guild.id)
+    return decision.allowed
 
   return commands.check(predicate)
     
 
 async def get_ignore_data(guild_id: int) -> dict:
-    async with connect("ignore.db") as db:
-        data = {
-            "channel": set(),
-            "user": set(),
-            "command": set(),
-            "bypassuser": set(),
-        }
-
-        async with db.execute("SELECT channel_id FROM ignored_channels WHERE guild_id = ?", (guild_id,)) as cursor:
-            channels = await cursor.fetchall()
-            data["channel"] = {str(channel_id) for (channel_id,) in channels}
-
-        async with db.execute("SELECT user_id FROM ignored_users WHERE guild_id = ?", (guild_id,)) as cursor:
-            users = await cursor.fetchall()
-            data["user"] = {str(user_id) for (user_id,) in users}
-
-        async with db.execute("SELECT command_name FROM ignored_commands WHERE guild_id = ?", (guild_id,)) as cursor:
-            commands = await cursor.fetchall()
-            data["command"] = {command_name.strip().lower() for (command_name,) in commands}
-
-        async with db.execute("SELECT user_id FROM bypassed_users WHERE guild_id = ?", (guild_id,)) as cursor:
-            bypass_users = await cursor.fetchall()
-            data["bypassuser"] = {str(user_id) for (user_id,) in bypass_users}
-
-    return data
+    return await get_security_gate().get_ignore_data(guild_id)
 
 def ignore_check():
     async def predicate(ctx):
         if ctx.guild is None:
             return True
 
-        data = await get_ignore_data(ctx.guild.id)
-        ch = data["channel"]
-        iuser = data["user"]
-        cmd = data["command"]
-        buser = data["bypassuser"]
-
-        if str(ctx.author.id) in buser:
-            return True
-        if str(ctx.channel.id) in ch or str(ctx.author.id) in iuser:
-            return False
-
-        command_name = ctx.command.name.strip().lower()
-        aliases = [alias.strip().lower() for alias in ctx.command.aliases]
-        if command_name in cmd or any(alias in cmd for alias in aliases):
-            return False
-
-        return True
+        decision = await get_security_gate().check_ignore(ctx)
+        return decision.allowed
 
     return commands.check(predicate)
 
@@ -239,6 +182,37 @@ def is_moderation_staff(member: discord.Member) -> bool:
 def moderation_staff_check():
     async def predicate(ctx):
         return bool(ctx.guild and is_moderation_staff(ctx.author))
+
+    return commands.check(predicate)
+
+
+def bot_has_permissions(**permissions: bool):
+    """Ensure the bot has required guild permissions before running a command."""
+
+    async def predicate(ctx):
+        if ctx.guild is None or ctx.guild.me is None:
+            return True
+
+        missing = [
+            perm.replace("_", " ").title()
+            for perm, required in permissions.items()
+            if required and not getattr(ctx.guild.me.guild_permissions, perm, False)
+        ]
+        if not missing:
+            return True
+
+        from utils.components_v2 import warning_panel
+
+        label = ", ".join(missing)
+        await ctx.reply(
+            view=warning_panel(
+                f"I need **{label}** permission(s) to run `{ctx.command.qualified_name}`.",
+                title="Missing Bot Permissions",
+            ),
+            mention_author=False,
+            delete_after=8,
+        )
+        return False
 
     return commands.check(predicate)
 

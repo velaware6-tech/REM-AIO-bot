@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 from datetime import datetime
 from utils.Tools import *
-from utils.cv2_compat import embed_to_view, embeds_to_view
+from utils.cv2_compat import embed_to_view, embeds_to_view, sync_panel_message
 
 class SnipeView(discord.ui.View):
     def __init__(self, bot, snipes, user_id):
@@ -79,7 +79,7 @@ class SnipeView(discord.ui.View):
     async def on_timeout(self):
         for child in self.children:
             child.disabled = True
-        await self.message.edit(view=self)
+        await sync_panel_message(self)
 
 
 class Snipe(commands.Cog):
@@ -114,6 +114,7 @@ class Snipe(commands.Cog):
     @ignore_check()
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.has_permissions(manage_messages=True)
+    @bot_has_permissions(manage_messages=True, read_message_history=True, send_messages=True)
     async def snipe(self, ctx):
         channel_snipes = self.snipes.get(ctx.channel.id, [])
         if not channel_snipes:

@@ -611,7 +611,7 @@ class Voice(commands.Cog):
     @blacklist_check()
     @ignore_check()
     @commands.has_permissions(manage_roles=True)
-    @commands.bot_has_permissions(manage_roles=True)
+    @bot_has_permissions(manage_roles=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     async def _lock(self, ctx):
@@ -644,7 +644,7 @@ class Voice(commands.Cog):
     @blacklist_check()
     @ignore_check()
     @commands.has_permissions(manage_roles=True)
-    @commands.bot_has_permissions(manage_roles=True)
+    @bot_has_permissions(manage_roles=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     async def _unlock(self, ctx):
@@ -677,7 +677,7 @@ class Voice(commands.Cog):
     @blacklist_check()
     @ignore_check()
     @commands.has_permissions(manage_roles=True)
-    @commands.bot_has_permissions(manage_roles=True)
+    @bot_has_permissions(manage_roles=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     async def _private(self, ctx):
@@ -711,7 +711,7 @@ class Voice(commands.Cog):
     @blacklist_check()
     @ignore_check()
     @commands.has_permissions(manage_roles=True)
-    @commands.bot_has_permissions(manage_roles=True)
+    @bot_has_permissions(manage_roles=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     async def _unprivate(self, ctx):

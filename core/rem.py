@@ -10,8 +10,10 @@ import discord
 from discord.ext import commands
 
 from utils import console, getConfig, updateConfig
+from utils.components_v2 import error_panel, warning_panel
 from utils.config import OWNER_IDS
-from utils.database import connect
+from utils.database import close_shared_databases, connect, get_anti_db
+from utils.security import AccessDecision, get_security_gate
 from utils.discord_compat import install_neutral_embed_policy
 from utils.migrations import run_startup_migrations
 
@@ -34,6 +36,7 @@ class Rem(commands.AutoShardedBot):
         intents.members = True
         self.session: aiohttp.ClientSession | None = None
         self._synced_app_commands = False
+        self.security = get_security_gate()
         super().__init__(
             command_prefix=self.get_prefix,
             case_insensitive=True,
@@ -49,8 +52,85 @@ class Rem(commands.AutoShardedBot):
 
     async def setup_hook(self):
         await run_startup_migrations()
+        await get_anti_db()
         self.session = aiohttp.ClientSession()
+        self.add_check(self._global_security_check)
+        self.tree.interaction_check = self._interaction_security_check
         await self.load_extensions()
+
+    async def _deny_access(self, ctx: Context, decision: AccessDecision) -> None:
+        reason = decision.reason
+        if reason.startswith("rate_limit:"):
+            retry = reason.split(":", 1)[1]
+            view = warning_panel(
+                f"Slow down — try again in **{retry}s**.",
+                title="Rate Limited",
+            )
+        elif reason == "guild_blacklisted":
+            view = error_panel(
+                "This server is restricted from using REM.",
+                title="Access Denied",
+            )
+        elif reason == "user_blacklisted":
+            view = error_panel(
+                "You are restricted from using REM.",
+                title="Access Denied",
+            )
+        elif reason == "channel_ignored":
+            view = warning_panel(
+                "This channel is ignored.",
+                title="Ignored",
+            )
+        elif reason == "user_ignored":
+            view = warning_panel(
+                "You are ignored in this server.",
+                title="Ignored",
+            )
+        elif reason == "command_ignored":
+            view = warning_panel(
+                "This command is ignored in this server.",
+                title="Ignored",
+            )
+        else:
+            view = error_panel("You cannot use this command here.", title="Access Denied")
+
+        try:
+            await ctx.reply(view=view, delete_after=8, mention_author=False)
+        except Exception:
+            pass
+
+    async def _global_security_check(self, ctx: Context) -> bool:
+        if ctx.command is None:
+            return True
+
+        decision = await self.security.run_command_gate(ctx)
+        if decision.allowed:
+            return True
+
+        await self._deny_access(ctx, decision)
+        return False
+
+    async def _interaction_security_check(self, interaction: discord.Interaction) -> bool:
+        decision = await self.security.run_interaction_gate(interaction)
+        if decision.allowed:
+            return True
+
+        reason = decision.reason
+        if reason.startswith("rate_limit:"):
+            retry = reason.split(":", 1)[1]
+            message = f"Slow down — try again in **{retry}s**."
+        elif reason == "user_blacklisted":
+            message = "You are restricted from using REM."
+        elif reason == "guild_blacklisted":
+            message = "This server is restricted from using REM."
+        else:
+            message = "You cannot use this command."
+
+        if interaction.response.is_done():
+            await interaction.followup.send(message, ephemeral=True)
+        else:
+            await interaction.response.send_message(message, ephemeral=True)
+        return False
 
     async def load_extensions(self):
         timer = console.LoadTimer("EXT")
@@ -90,8 +170,7 @@ class Rem(commands.AutoShardedBot):
                 self.session = None
 
         try:
-            from db._db import Database
-            await Database().close()
+            await close_shared_databases()
         except Exception:
             log.exception("Failed to close shared database connection")
 
@@ -130,18 +209,15 @@ class Rem(commands.AutoShardedBot):
             return msg
 
     async def get_prefix(self, message: discord.Message):
-        async with connect("np.db") as db:
-            async with db.execute("SELECT id FROM np WHERE id = ?", (message.author.id,)) as cursor:
-                row = await cursor.fetchone()
+        no_prefix = await self.security.has_no_prefix(message.author.id)
 
         if message.guild:
-            data = await getConfig(message.guild.id)
-            prefix = data["prefix"]
-            if row:
+            prefix = await self.security.get_prefix(message.guild.id)
+            if no_prefix:
                 return commands.when_mentioned_or(prefix, "")(self, message)
             return commands.when_mentioned_or(prefix)(self, message)
 
-        if row:
+        if no_prefix:
             return commands.when_mentioned_or(">", "")(self, message)
         return commands.when_mentioned_or("")(self, message)
 

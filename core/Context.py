@@ -6,6 +6,8 @@ import functools
 from typing import Optional, Any
 import asyncio
 
+from utils.components_v2 import warning_panel
+
 __all__ = ("Context", )
 
 
@@ -50,11 +52,15 @@ class Context(commands.Context):
     async def send(self,
                    content: Optional[str] = None,
                    **kwargs) -> Optional[discord.Message]:
-        if not (self.channel.permissions_for(self.me)).send_messages:
+        if not self.channel.permissions_for(self.me).send_messages:
             try:
                 await self.author.send(
-                    "bot dont have perms to send msg in that channel")
-            except discord.Forbidden:  
+                    view=warning_panel(
+                        "I don't have permission to send messages in that channel.",
+                        title="Missing Permission",
+                    )
+                )
+            except discord.Forbidden:
                 pass
             return
         return await super().send(content, **kwargs)
@@ -62,11 +68,15 @@ class Context(commands.Context):
     async def reply(self,
                     content: Optional[str] = None,
                     **kwargs) -> Optional[discord.Message]:
-        if not (self.channel.permissions_for(self.me)).send_messages:
+        if not self.channel.permissions_for(self.me).send_messages:
             try:
                 await self.author.send(
-                    "bot dont have perms to send msg in that channel")
-            except discord.Forbidden:  
+                    view=warning_panel(
+                        "I don't have permission to send messages in that channel.",
+                        title="Missing Permission",
+                    )
+                )
+            except discord.Forbidden:
                 pass
             return
         return await super().reply(content, **kwargs)

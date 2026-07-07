@@ -145,7 +145,7 @@ class Fun(commands.Cog):
         if not self.google_api_key or not self.search_engine_id:
             return await ctx.reply("Image search is not configured. Set `GOOGLE_API_KEY` and `GOOGLE_SEARCH_ENGINE_ID` in `.env`.")
         if not ctx.channel.is_nsfw():
-            await ctx.reply("This command can only be used in NSFW (age-restricted) channels.", ephemeral=True)
+            await ctx.reply("This command can only be used in NSFW (age-restricted) channels.")
             return
         async with aiohttp.ClientSession() as session:
             async with session.get(f"https://www.googleapis.com/customsearch/v1?key={self.google_api_key}&cx={self.search_engine_id}&q={search_query}&searchType=image") as response:

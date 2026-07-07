@@ -370,7 +370,7 @@ class Emergency(commands.Cog):
     @commands.cooldown(1, 40, commands.BucketType.user)
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     @commands.guild_only()
-    @commands.bot_has_permissions(manage_roles=True)
+    @bot_has_permissions(manage_roles=True)
     async def emergencysituation(self, ctx):
         guild_id = ctx.guild.id
 
@@ -506,7 +506,7 @@ class Emergency(commands.Cog):
     @ignore_check()
     @commands.cooldown(1, 30, commands.BucketType.user)
     @commands.guild_only()
-    @commands.bot_has_permissions(manage_roles=True)
+    @bot_has_permissions(manage_roles=True)
     async def emergencyrestore(self, ctx):
         if ctx.author.id != ctx.guild.owner_id and ctx.author.id not in BYPASS_IDS:
             return await ctx.reply(view = embed_to_view(discord.Embed(

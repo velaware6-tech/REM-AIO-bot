@@ -10,7 +10,30 @@ from urllib.parse import quote
 from utils.config import OPENAI_API_KEY
 from utils.config_loader import load_current_language, config
 from openai import AsyncOpenAI
-from duckduckgo_search import AsyncDDGS
+try:
+    from duckduckgo_search import AsyncDDGS
+except ImportError:
+    try:
+        from duckduckgo_search import DDGS
+
+        class AsyncDDGS:
+            def __init__(self, proxy=None):
+                self._ddgs = DDGS(proxy=proxy)
+
+            async def text(self, query, max_results=6):
+                import asyncio
+
+                def _search():
+                    return list(self._ddgs.text(query, max_results=max_results))
+
+                return await asyncio.to_thread(_search)
+    except ImportError:
+        class AsyncDDGS:
+            def __init__(self, proxy=None):
+                pass
+
+            async def text(self, query, max_results=6):
+                return []
 from dotenv import load_dotenv
 
 load_dotenv()

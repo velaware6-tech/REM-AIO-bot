@@ -10,12 +10,14 @@ from typing import Optional
 from utils.cv2_compat import embed_to_view, embeds_to_view
 
 from utils.database import connect
+from utils.security import get_security_gate
 class Ignore(commands.Cog):
   def __init__(self, bot):
     self.bot = bot
     self.db_path = "db/ignore.db"
     self.color = 0x000000
-    asyncio.create_task(self.initialize_db())
+  async def cog_load(self) -> None:
+    await self.initialize_db()
 
   async def initialize_db(self):
     async with connect(self.db_path) as db:
@@ -74,6 +76,7 @@ class Ignore(commands.Cog):
           else:
               await db.execute("INSERT INTO ignored_commands (guild_id, command_name) VALUES (?, ?)", (ctx.guild.id, command_name_normalized))
               await db.commit()
+              await get_security_gate().invalidate_ignore(ctx.guild.id)
               embed = discord.Embed(title=f"{emojis.TICK} Success", description=f"Successfully added `{command_name}` to the ignore commands list.", color=self.color)
               await ctx.reply(view = embed_to_view(embed))
 
@@ -91,6 +94,7 @@ class Ignore(commands.Cog):
           else:
               await db.execute("DELETE FROM ignored_commands WHERE guild_id = ? AND command_name = ?", (ctx.guild.id, command_name_normalized))
               await db.commit()
+              await get_security_gate().invalidate_ignore(ctx.guild.id)
               embed = discord.Embed(title=f"{emojis.TICK} Success", description=f"Successfully removed `{command_name}` from the ignore commands list.", color=self.color)
               await ctx.reply(view = embed_to_view(embed))
 
@@ -146,6 +150,7 @@ class Ignore(commands.Cog):
       else:
         await db.execute("INSERT INTO ignored_channels (guild_id, channel_id) VALUES (?, ?)", (ctx.guild.id, channel.id))
         await db.commit()
+        await get_security_gate().invalidate_ignore(ctx.guild.id)
         embed = discord.Embed(title=f"{emojis.TICK} Success", description=f"Successfully added {channel.mention} to the ignore channels list.", color=self.color)
         await ctx.reply(view = embed_to_view(embed))
 
@@ -164,6 +169,7 @@ class Ignore(commands.Cog):
       else:
         await db.execute("DELETE FROM ignored_channels WHERE guild_id = ? AND channel_id = ?", (ctx.guild.id, channel.id))
         await db.commit()
+        await get_security_gate().invalidate_ignore(ctx.guild.id)
         embed = discord.Embed(title=f"{emojis.TICK} Success", description=f"Successfully removed {channel.mention} from the ignore channels list.", color=self.color)
         await ctx.reply(view = embed_to_view(embed))
 
@@ -220,6 +226,7 @@ class Ignore(commands.Cog):
       else:
         await db.execute("INSERT INTO ignored_users (guild_id, user_id) VALUES (?, ?)", (ctx.guild.id, user.id))
         await db.commit()
+        await get_security_gate().invalidate_ignore(ctx.guild.id)
         embed = discord.Embed(title=f"{emojis.TICK} Success", description=f"Successfully added {user.mention} to the ignore users list.", color=self.color)
         await ctx.reply(view = embed_to_view(embed))
 
@@ -238,6 +245,7 @@ class Ignore(commands.Cog):
       else:
         await db.execute("DELETE FROM ignored_users WHERE guild_id = ? AND user_id = ?", (ctx.guild.id, user.id))
         await db.commit()
+        await get_security_gate().invalidate_ignore(ctx.guild.id)
         embed = discord.Embed(title=f"{emojis.TICK} Success", description=f"Successfully removed {user.mention} from the ignore users list.", color=self.color)
         await ctx.send(view = embed_to_view(embed))
 
@@ -293,6 +301,7 @@ class Ignore(commands.Cog):
       else:
         await db.execute("INSERT INTO bypassed_users (guild_id, user_id) VALUES (?, ?)", (ctx.guild.id, user.id))
         await db.commit()
+        await get_security_gate().invalidate_ignore(ctx.guild.id)
         embed = discord.Embed(title=f"{emojis.TICK} Success", description=f"Successfully added {user.mention} to the bypass users list.", color=self.color)
         await ctx.reply(view = embed_to_view(embed))
 
@@ -311,6 +320,7 @@ class Ignore(commands.Cog):
       else:
         await db.execute("DELETE FROM bypassed_users WHERE guild_id = ? AND user_id = ?", (ctx.guild.id, user.id))
         await db.commit()
+        await get_security_gate().invalidate_ignore(ctx.guild.id)
         embed = discord.Embed(title=f"{emojis.TICK} Success", description=f"Successfully removed {user.mention} from the bypass users list.", color=self.color)
         await ctx.reply(view = embed_to_view(embed))
 

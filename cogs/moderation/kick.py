@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 from discord import ui
 from utils.Tools import *
-from utils.cv2_compat import embed_to_view, embeds_to_view
+from utils.cv2_compat import embed_to_view, embeds_to_view, sync_panel_message
 
 class KickView(ui.View):
     def __init__(self, member):
@@ -18,11 +18,7 @@ class KickView(ui.View):
     async def on_timeout(self):
         for item in self.children:
             item.disabled = True
-        if self.message:
-            try:
-                await self.message.edit(view=self)
-            except Exception:
-                pass
+        await sync_panel_message(self)
 
     @ui.button(style=discord.ButtonStyle.gray, emoji=f"{emojis.DELETE}")
     async def delete(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -42,7 +38,7 @@ class Kick(commands.Cog):
     @ignore_check()
     @top_check()
     @commands.has_permissions(kick_members=True)
-    @commands.bot_has_permissions(kick_members=True)
+    @bot_has_permissions(kick_members=True)
     @commands.guild_only()
     async def kick_command(self, ctx, member: discord.Member, *, reason: str = None):
         reason = reason or "No reason provided"

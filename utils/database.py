@@ -58,3 +58,17 @@ async def open_connection(
     await db.execute("PRAGMA busy_timeout=5000")
     await db.execute("PRAGMA foreign_keys=ON")
     return db
+
+
+async def get_anti_db() -> aiosqlite.Connection:
+    """Return the shared singleton connection for anti.db (antinuke, whitelist, etc.)."""
+    from db._db import Database
+
+    return await Database("anti.db").ensure_connection()
+
+
+async def close_shared_databases() -> None:
+    """Close long-lived shared database handles."""
+    from db._db import Database
+
+    await Database().close()

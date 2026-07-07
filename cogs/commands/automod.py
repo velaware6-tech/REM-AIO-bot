@@ -6,6 +6,7 @@ import discord
 from discord.ext import commands
 from utils.Tools import *
 from utils.cv2_compat import embed_to_view, embeds_to_view
+from utils.automod_cache import invalidate_automod_state
 
 class ShowRules(discord.ui.View):
     def __init__(self, author, selected_events):
@@ -64,7 +65,12 @@ class Automod(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.default_punishment = "Mute"
-        asyncio.create_task(self.init_db())
+
+    async def cog_load(self) -> None:
+        await self.init_db()
+
+    async def _refresh_automod_cache(self, guild_id: int) -> None:
+        await invalidate_automod_state(guild_id)
 
     async def get_exempt_roles_channels(self, guild_id):
         async with connect('automod.db') as db:
@@ -155,7 +161,7 @@ class Automod(commands.Cog):
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
-    @commands.bot_has_permissions(manage_guild=True)
+    @bot_has_permissions(manage_guild=True)
     async def enable(self, ctx):
         guild_id = ctx.guild.id
         if ctx.author != ctx.guild.owner and ctx.author.top_role.position < ctx.guild.me.top_role.position:
@@ -240,7 +246,8 @@ class Automod(commands.Cog):
                 await db.execute("INSERT OR REPLACE INTO automod_punishments (guild_id, event, punishment) VALUES (?, ?, ?)", (guild_id, event, self.default_punishment))
             await db.commit()
 
-        
+        await self._refresh_automod_cache(guild_id)
+
         if "Anti NSFW link" in selected_events:
             exempt_roles, exempt_channels = await self.get_exempt_roles_channels(guild_id)
             nsfw_keywords = ["porn", "xxx", "adult", "sex", "nsfw", "xnxx", "onlyfans", "brazzers", "xhamster", "xvideos", "pornhub", "redtube", "livejasmin", "youporn" , "tube8", "pornhat", "swxvid", "ixxx", "pornhat"]
@@ -454,6 +461,7 @@ class Automod(commands.Cog):
 
             await db.execute("INSERT OR REPLACE INTO automod_ignored (guild_id, type, id) VALUES (?, 'channel', ?)", (guild_id, channel.id))
             await db.commit()
+            await self._refresh_automod_cache(guild_id)
             
             if await self.is_anti_nsfw_enabled(guild_id):
                 try:
@@ -522,6 +530,7 @@ class Automod(commands.Cog):
 
             await db.execute("INSERT OR REPLACE INTO automod_ignored (guild_id, type, id) VALUES (?, 'role', ?)", (guild_id, role.id))
             await db.commit()
+            await self._refresh_automod_cache(guild_id)
 
             if await self.is_anti_nsfw_enabled(guild_id):
                 try:

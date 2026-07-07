@@ -1,7 +1,8 @@
 import discord
 from discord.ext import commands
-import sqlite3
 from datetime import datetime
+
+from utils.database import open_connection
 from utils.cv2_compat import embed_to_view, embeds_to_view
 
 DB_FILE = "logging.db"
@@ -20,42 +21,45 @@ LOG_CHANNELS = {
 class Logging(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.db_path = DB_FILE
-        self.create_table()
+        self.db = None
 
-    def create_table(self):
-        with sqlite3.connect(self.db_path) as conn:
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS log_channels (
-                    guild_id INTEGER,
-                    log_type TEXT,
-                    channel_id INTEGER
-                )
-            """)
-
-    def set_log_channel(self, guild_id, log_type, channel_id):
-        with sqlite3.connect(self.db_path) as conn:
-            conn.execute(
-                "REPLACE INTO log_channels (guild_id, log_type, channel_id) VALUES (?, ?, ?)",
-                (guild_id, log_type, channel_id)
+    async def cog_load(self) -> None:
+        self.db = await open_connection(DB_FILE)
+        await self.db.execute("""
+            CREATE TABLE IF NOT EXISTS log_channels (
+                guild_id INTEGER,
+                log_type TEXT,
+                channel_id INTEGER
             )
+        """)
+        await self.db.commit()
 
-    def get_log_channel(self, guild_id, log_type):
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.execute(
-                "SELECT channel_id FROM log_channels WHERE guild_id = ? AND log_type = ?",
-                (guild_id, log_type)
-            )
-            result = cursor.fetchone()
+    async def cog_unload(self) -> None:
+        if self.db is not None:
+            await self.db.close()
+
+    async def set_log_channel(self, guild_id, log_type, channel_id):
+        await self.db.execute(
+            "REPLACE INTO log_channels (guild_id, log_type, channel_id) VALUES (?, ?, ?)",
+            (guild_id, log_type, channel_id),
+        )
+        await self.db.commit()
+
+    async def get_log_channel(self, guild_id, log_type):
+        async with self.db.execute(
+            "SELECT channel_id FROM log_channels WHERE guild_id = ? AND log_type = ?",
+            (guild_id, log_type),
+        ) as cursor:
+            result = await cursor.fetchone()
             return result[0] if result else None
 
     async def send_log(self, guild, log_type, embed):
         embed.timestamp = datetime.utcnow()
-        channel_id = self.get_log_channel(guild.id, log_type)
+        channel_id = await self.get_log_channel(guild.id, log_type)
         if channel_id:
             channel = guild.get_channel(channel_id)
             if channel:
-                await channel.send(view = embed_to_view(embed))
+                await channel.send(view=embed_to_view(embed))
 
     @commands.command(name="loggingsetup")
     @commands.has_permissions(administrator=True)
@@ -76,7 +80,7 @@ class Logging(commands.Cog):
             channel = discord.utils.get(guild.text_channels, name=name)
             if not channel:
                 channel = await guild.create_text_channel(name=name, category=category, overwrites=overwrites)
-            self.set_log_channel(guild.id, log_type, channel.id)
+            await self.set_log_channel(guild.id, log_type, channel.id)
 
         await ctx.send("✅ Logging channels created privately under 'rem-logging'.")
 
@@ -86,12 +90,9 @@ class Logging(commands.Cog):
         """Removes REM logging channels and logging DB config"""
         guild = ctx.guild
 
-        # Remove DB entries
-        with sqlite3.connect(DB_FILE) as conn:
-            conn.execute("DELETE FROM log_channels WHERE guild_id = ?", (guild.id,))
-            conn.commit()
+        await self.db.execute("DELETE FROM log_channels WHERE guild_id = ?", (guild.id,))
+        await self.db.commit()
 
-        # Delete channels and category
         category = discord.utils.get(guild.categories, name="rem-logging")
         if category:
             for channel in category.channels:
@@ -99,8 +100,6 @@ class Logging(commands.Cog):
             await category.delete()
 
         await ctx.send("🗑️ Logging channels and category 'rem-logging' have been removed.")
-
-    # === Events ===
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
@@ -195,6 +194,6 @@ class Logging(commands.Cog):
             embed.add_field(name="Name", value=emoji.name)
             await self.send_log(guild, "emoji", embed)
 
-# Setup
+
 async def setup(bot):
     await bot.add_cog(Logging(bot))

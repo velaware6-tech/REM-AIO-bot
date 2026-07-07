@@ -1,4 +1,5 @@
 from utils import emojis
+from utils.config import MAPQUEST_API_KEY
 
 import discord
 from discord.ext import commands
@@ -41,7 +42,12 @@ class MapView(ui.View):
     def update_map(self):
         if self.latitude is None or self.longitude is None:
             return
-        self.map_url = f'https://www.mapquestapi.com/staticmap/v5/map?key=E2SaL3qiTpXQ43nxZFBp0wzEnBI6pqbG&center={self.latitude},{self.longitude}&zoom={self.zoom_level}&size={self.map_size}&type={self.map_style}'
+        key = MAPQUEST_API_KEY or ""
+        self.map_url = (
+            f"https://www.mapquestapi.com/staticmap/v5/map?key={key}"
+            f"&center={self.latitude},{self.longitude}&zoom={self.zoom_level}"
+            f"&size={self.map_size}&type={self.map_style}"
+        )
 
     async def update_embed(self, interaction: discord.Interaction):
         if self.latitude is None or self.longitude is None:
@@ -217,6 +223,8 @@ class Map(commands.Cog):
     @ignore_check()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def map(self, ctx, *, location: str):
+        if not MAPQUEST_API_KEY:
+            return await ctx.send("Map command is not configured. Set `MAPQUEST_API_KEY` in `.env`.")
         view = MapView(self.bot, location, ctx)
         if view.coordinates == (None, None):
             await ctx.send("Failed to retrieve coordinates for the location. Please try again.")

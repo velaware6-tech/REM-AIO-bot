@@ -6,7 +6,7 @@ from discord import ui
 from datetime import timedelta
 import re
 from utils.Tools import *
-from utils.cv2_compat import embed_to_view, embeds_to_view
+from utils.cv2_compat import embed_to_view, embeds_to_view, sync_panel_message
 
 class TimeoutView(ui.View):
     def __init__(self, user, author):
@@ -26,7 +26,7 @@ class TimeoutView(ui.View):
         for item in self.children:
             item.disabled = True
         if self.message:
-            await self.message.edit(view=self)
+            await sync_panel_message(self)
 
     @ui.button(label="Unmute", style=discord.ButtonStyle.success)
     async def unmute(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -53,11 +53,7 @@ class AlreadyTimedoutView(ui.View):
     async def on_timeout(self):
         for item in self.children:
             item.disabled = True
-        if self.message:
-            try:
-                await self.message.edit(view=self)
-            except Exception:
-                pass
+        await sync_panel_message(self)
 
     @ui.button(label="Unmute", style=discord.ButtonStyle.success)
     async def unmute(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -132,7 +128,7 @@ class Mute(commands.Cog):
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     @commands.guild_only()
     @commands.has_permissions(moderate_members=True)
-    @commands.bot_has_permissions(moderate_members=True)
+    @bot_has_permissions(moderate_members=True)
     async def mute(self, ctx, user: discord.Member, time: str = None, *, reason=None):
 
         if user.is_timed_out():

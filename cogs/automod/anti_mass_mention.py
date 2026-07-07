@@ -6,6 +6,7 @@ from discord.ext import commands
 from datetime import timedelta
 import asyncio
 from utils.cv2_compat import embed_to_view, embeds_to_view
+from utils.automod_helpers import automod_gate, log_automod_action
 
 class AntiMassMention(commands.Cog):
     def __init__(self, bot):
@@ -65,29 +66,19 @@ class AntiMassMention(commands.Cog):
         if message.author.bot:
             return
 
+        gate = await automod_gate(message, 'Anti mass mention')
+        if gate is None:
+            return
+
         guild = message.guild
         user = message.author
         channel = message.channel
-        guild_id = guild.id
 
-        if not await self.is_automod_enabled(guild_id) or not await self.is_anti_mass_mention_enabled(guild_id):
-            return
-
-        if user == guild.owner or user == self.bot.user:
-            return
-
-        ignored_channels = await self.get_ignored_channels(guild_id)
-        if channel.id in ignored_channels:
-            return
-
-        ignored_roles = await self.get_ignored_roles(guild_id)
-        if any(role.id in ignored_roles for role in user.roles):
-            return
 
 
         mention_count = message.content.count("<@")
         if mention_count >= self.mass_mention_threshold:
-            punishment = await self.get_punishment(guild_id)
+            punishment = gate.punishment
             action_taken = None
             reason = f"Mass Mention ({mention_count} mentions)"
 
@@ -110,7 +101,11 @@ class AntiMassMention(commands.Cog):
                 simple_embed.set_footer(text="Use the “automod logging” command to get automod logs if it is not enabled.", icon_url=self.bot.user.avatar.url)
                 await channel.send(view = embed_to_view(simple_embed), delete_after=30)
 
-                await self.log_action(guild, user, channel, action_taken, reason)
+                await log_automod_action(
+                    guild, user, channel, action_taken, reason,
+                    title='Automod Log: Anti mass mention',
+                    log_channel_id=gate.log_channel_id,
+                )
 
             except discord.Forbidden:
                 pass

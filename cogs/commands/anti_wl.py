@@ -1,4 +1,4 @@
-from utils.database import open_connection
+from utils.database import get_anti_db
 from utils import emojis
 
 import asyncio
@@ -11,12 +11,12 @@ from utils.cv2_compat import embed_to_view, embeds_to_view
 class Whitelist(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        asyncio.create_task(self.initialize_db())
 
-    
-    #@commands.Cog.listener()
+    async def cog_load(self) -> None:
+        await self.initialize_db()
+
     async def initialize_db(self):
-        self.db = await open_connection('anti.db')
+        self.db = await get_anti_db()
         await self.db.execute('''
             CREATE TABLE IF NOT EXISTS whitelisted_users (
                 guild_id INTEGER,
@@ -51,7 +51,7 @@ class Whitelist(commands.Cog):
     @commands.has_permissions(administrator=True)
 
     async def whitelist(self, ctx, member: discord.Member = None):
-        if ctx.guild.member_count < 2:
+        if ctx.guild.member_count < 30:
             embed = discord.Embed(
                 color=0x000000,
                 description=f"{emojis.CROSSICON} | Your Server Doesn't Meet My 30 Member Criteria"
@@ -270,7 +270,7 @@ class Whitelist(commands.Cog):
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def whitelisted(self, ctx):
-        if ctx.guild.member_count < 2:
+        if ctx.guild.member_count < 30:
             embed = discord.Embed(
                 color=0x000000,
                 description=f"{emojis.CROSSICON} | Your Server Doesn't Meet My 30 Member Criteria"
@@ -344,7 +344,7 @@ class Whitelist(commands.Cog):
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def whitelistreset(self, ctx):
-        if ctx.guild.member_count < 2:
+        if ctx.guild.member_count < 30:
             embed = discord.Embed(
                 color=0x000000,
                 description=f"{emojis.CROSSICON} | Your Server Doesn't Meet My 30 Member Criteria"

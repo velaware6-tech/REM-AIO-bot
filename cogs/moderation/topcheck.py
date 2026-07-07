@@ -4,8 +4,8 @@ from utils import emojis
 import discord
 from discord.ext import commands
 import asyncio
-from utils.Tools import security_manager_check
-from utils.cv2_compat import embed_to_view, embeds_to_view
+from utils.Tools import bot_has_permissions, security_manager_check
+from utils.cv2_compat import embed_to_view, embeds_to_view, sync_panel_message
 
 class TopCheck(commands.Cog):
     def __init__(self, bot):
@@ -47,6 +47,7 @@ class TopCheck(commands.Cog):
         invoke_without_command=True)
     @commands.guild_only()
     @security_manager_check()
+    @bot_has_permissions(send_messages=True)
     async def topcheck(self, ctx):
         embed = discord.Embed(title="Top Check System",
                               description=(
@@ -73,6 +74,7 @@ class TopCheck(commands.Cog):
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     @security_manager_check()
+    @bot_has_permissions(send_messages=True)
     async def topcheck_enable(self, ctx):
         if ctx.author.id != ctx.guild.owner_id:
             return await ctx.reply(f"{emojis.CROSSICON} Only the **Server Owner** can enable topcheck.")
@@ -87,6 +89,7 @@ class TopCheck(commands.Cog):
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     @security_manager_check()
+    @bot_has_permissions(send_messages=True)
     async def topcheck_disable(self, ctx):
         if ctx.author.id != ctx.guild.owner_id:
             return await ctx.reply("Only the **Server Owner** can disable topcheck.")

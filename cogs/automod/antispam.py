@@ -6,6 +6,7 @@ from discord.ext import commands
 import asyncio
 from datetime import timedelta
 from utils.cv2_compat import embed_to_view, embeds_to_view
+from utils.automod_helpers import automod_gate, log_automod_action
 
 class AntiSpam(commands.Cog):
     def __init__(self, bot):
@@ -67,24 +68,13 @@ class AntiSpam(commands.Cog):
         if message.author.bot:
             return
 
+        gate = await automod_gate(message, 'Anti spam')
+        if gate is None:
+            return
+
         guild = message.guild
         user = message.author
         channel = message.channel
-        guild_id = guild.id
-
-        if not await self.is_automod_enabled(guild_id) or not await self.is_anti_spam_enabled(guild_id):
-            return
-
-        if user == guild.owner or user == self.bot.user:
-            return
-
-        ignored_channels = await self.get_ignored_channels(guild_id)
-        if channel.id in ignored_channels:
-            return
-
-        ignored_roles = await self.get_ignored_roles(guild_id)
-        if any(role.id in ignored_roles for role in user.roles):
-            return
 
         current_time = message.created_at.timestamp()
         user_messages = self.recent_messages.get(user.id, [])
@@ -93,7 +83,7 @@ class AntiSpam(commands.Cog):
         self.recent_messages[user.id] = user_messages
 
         if len(user_messages) > self.spam_threshold:
-            punishment = await self.get_punishment(guild_id)
+            punishment = gate.punishment
             action_taken = None
             reason = "Spamming"
 
@@ -112,10 +102,14 @@ class AntiSpam(commands.Cog):
                 simple_embed = discord.Embed(title="Automod Anti-Spam", color=0xff0000)
                 simple_embed.description = f"{emojis.TICK} | {user.mention} has been successfully **{action_taken}** for **Spamming.**"
                 
-                simple_embed.set_footer(text="Use the “automod logging” command to get automod logs if it is not enabled.", icon_url=self.bot.user.avatar.url)
+                simple_embed.set_footer(text="Use the “automod logging” command to get automod logs if it is not enabled.", icon_url=self.bot.user.display_avatar.url)
                 await channel.send(view = embed_to_view(simple_embed), delete_after=30)
 
-                await self.log_action(guild, user, channel, action_taken, reason)
+                await log_automod_action(
+                    guild, user, channel, action_taken, reason,
+                    title='Automod Log: Anti spam',
+                    log_channel_id=gate.log_channel_id,
+                )
 
             except discord.Forbidden:
                 pass

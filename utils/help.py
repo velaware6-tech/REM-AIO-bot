@@ -379,4 +379,149 @@ class HelpView(discord.ui.LayoutView):
             await interaction.response.edit_message(view=self)
 
 
+class ListNavButton(discord.ui.Button):
+    def __init__(
+        self,
+        *,
+        invoker: discord.abc.User,
+        action: str,
+        emoji: str,
+        disabled: bool = False,
+        style: discord.ButtonStyle = discord.ButtonStyle.secondary,
+    ):
+        super().__init__(
+            emoji=emoji,
+            style=style,
+            custom_id=f"help:list:{action}:{invoker.id}",
+            disabled=disabled,
+        )
+        self.invoker = invoker
+        self.action = action
+
+    async def callback(self, interaction: discord.Interaction):
+        if interaction.user != self.invoker:
+            await interaction.response.send_message(
+                "You must run this command to interact with it.",
+                ephemeral=True,
+            )
+            return
+
+        view: HelpListView = self.view  # type: ignore[assignment]
+
+        if self.action == "first":
+            await view.set_page(0, interaction)
+        elif self.action == "prev":
+            await view.set_page(view.index - 1, interaction)
+        elif self.action == "delete":
+            await interaction.response.defer()
+            if interaction.message:
+                await interaction.message.delete()
+        elif self.action == "next":
+            await view.set_page(view.index + 1, interaction)
+        elif self.action == "last":
+            await view.set_page(view.total_pages - 1, interaction)
+
+
+class HelpListView(discord.ui.LayoutView):
+    """CV2 paginated list for per-command and per-category help."""
+
+    def __init__(
+        self,
+        ctx: commands.Context,
+        *,
+        title: str,
+        description: str = "",
+        entries: list[tuple[str, str]],
+        per_page: int = 4,
+        timeout: float = 180,
+    ):
+        super().__init__(timeout=timeout)
+        self.ctx = ctx
+        self.title = title
+        self.description = description
+        self.entries = entries
+        self.per_page = per_page
+        self.index = 0
+        self.total_pages = max(1, (len(entries) + per_page - 1) // per_page)
+        self._render()
+
+    def _page_body(self) -> str:
+        start = self.index * self.per_page
+        chunk = self.entries[start : start + self.per_page]
+        lines = [f"## {self.title}"]
+        if self.description:
+            lines.extend(["", self.description.strip()])
+        if not chunk:
+            lines.extend(["", "*No entries to display.*"])
+        else:
+            lines.append("")
+            for name, value in chunk:
+                lines.append(f"**{name.strip()}**")
+                if value.strip():
+                    lines.append(value.strip())
+                lines.append("")
+        return "\n".join(lines).strip()
+
+    def _footer(self) -> str:
+        return (
+            f"- Page {self.index + 1}/{self.total_pages} "
+            f"| Requested by {self.ctx.author.display_name}"
+        )
+
+    def _nav_buttons(self) -> list[ListNavButton]:
+        prev_emoji = getattr(emojis, "PREVIOUS", emojis.NEXT)
+        return [
+            ListNavButton(
+                invoker=self.ctx.author,
+                action="first",
+                emoji=str(emojis.REWIND1),
+                disabled=self.index == 0,
+            ),
+            ListNavButton(
+                invoker=self.ctx.author,
+                action="prev",
+                emoji=str(prev_emoji),
+                disabled=self.index == 0,
+            ),
+            ListNavButton(
+                invoker=self.ctx.author,
+                action="delete",
+                emoji=str(emojis.DELETE),
+                style=discord.ButtonStyle.danger,
+            ),
+            ListNavButton(
+                invoker=self.ctx.author,
+                action="next",
+                emoji=str(emojis.ICONS_NEXT),
+                disabled=self.index >= self.total_pages - 1,
+            ),
+            ListNavButton(
+                invoker=self.ctx.author,
+                action="last",
+                emoji=str(emojis.FORWARD),
+                disabled=self.index >= self.total_pages - 1,
+            ),
+        ]
+
+    def _render(self) -> None:
+        self.clear_items()
+        self.add_item(
+            discord.ui.Container(
+                text(self._page_body()),
+                separator(),
+                text(self._footer()),
+                separator(),
+                action_row(*self._nav_buttons()),
+            )
+        )
+
+    async def set_page(self, page: int, interaction: discord.Interaction) -> None:
+        self.index = max(0, min(page, self.total_pages - 1))
+        self._render()
+        if interaction.response.is_done():
+            await interaction.edit_original_response(view=self)
+        else:
+            await interaction.response.edit_message(view=self)
+
+
 View = HelpView

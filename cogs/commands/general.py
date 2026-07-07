@@ -23,7 +23,6 @@ from discord.ui import Button, View
 import psutil
 import time
 from datetime import datetime, timezone, timedelta
-import sqlite3
 from typing import *
 import string
 from utils.cv2_compat import embed_to_view, embeds_to_view

@@ -499,7 +499,7 @@ class Customrole(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
 
-        if message.author.bot or not message.content:
+        if message.author.bot or not message.content or message.guild is None:
             return
 
         prefixes = await self.bot.get_prefix(message)

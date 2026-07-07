@@ -518,7 +518,7 @@ class Music(commands.Cog):
                         url=f'https://discord.gg/codexdev')
                     vote = Button(label='Vote',
                                  style=discord.ButtonStyle.link,
-                        url=f'https://top.gg/bot/11441796597355772640/vote')
+                        url=f'https://top.gg/bot/1144179659735572640/vote')
                     view = View()
                     view.add_item(support)
                     view.add_item(vote)
@@ -793,6 +793,7 @@ class Music(commands.Cog):
     @commands.hybrid_command(name="play", aliases=['p'], usage="play <query>", help="Plays a song or playlist.")
     @blacklist_check()
     @ignore_check()
+    @bot_has_permissions(connect=True, speak=True)
     @commands.cooldown(1, 3, commands.BucketType.user)
     async def play(self, ctx: commands.Context, *, query: str):
         
@@ -802,6 +803,7 @@ class Music(commands.Cog):
     @commands.hybrid_command(name="search", usage="search <query>", help="Searches music from multiple platforms.")
     @blacklist_check()
     @ignore_check()
+    @bot_has_permissions(connect=True, speak=True)
     @commands.cooldown(1, 3, commands.BucketType.user)
     async def search2(self, ctx: commands.Context, *, query: str):
         if not await self.ensure_lavalink(ctx):
@@ -822,6 +824,7 @@ class Music(commands.Cog):
     @commands.hybrid_command(name="nowplaying", aliases=["nop"], usage="nowplaying", help="Shows the info about current playing song.")
     @blacklist_check()
     @ignore_check()
+    @bot_has_permissions(connect=True, speak=True)
     @commands.cooldown(1, 3, commands.BucketType.user)
     async def nowplaying(self, ctx: commands.Context):
         vc = ctx.voice_client
@@ -866,6 +869,7 @@ class Music(commands.Cog):
     @commands.hybrid_command(name="autoplay", usage="autoplay", help="Toggles autoplay mode.")
     @blacklist_check()
     @ignore_check()
+    @bot_has_permissions(connect=True, speak=True)
     @commands.cooldown(1, 3, commands.BucketType.user)
     async def autoplay(self, ctx: commands.Context):
         vc = ctx.voice_client
@@ -886,6 +890,7 @@ class Music(commands.Cog):
     @commands.hybrid_command(name="loop", usage="loop", help="Toggles loop mode.")
     @blacklist_check()
     @ignore_check()
+    @bot_has_permissions(connect=True, speak=True)
     @commands.cooldown(1, 3, commands.BucketType.user)
     async def loop(self, ctx: commands.Context):
         vc = ctx.voice_client
@@ -907,6 +912,7 @@ class Music(commands.Cog):
     @commands.hybrid_command(name="pause", usage="pause", help="Pauses the current song.")
     @blacklist_check()
     @ignore_check()
+    @bot_has_permissions(connect=True, speak=True)
     @commands.cooldown(1, 3, commands.BucketType.user)
     async def pause(self, ctx: commands.Context):
         vc = ctx.voice_client
@@ -928,6 +934,7 @@ class Music(commands.Cog):
     @commands.hybrid_command(name="resume", usage="resume", help="Resumes the paused song.")
     @blacklist_check()
     @ignore_check()
+    @bot_has_permissions(connect=True, speak=True)
     @commands.cooldown(1, 3, commands.BucketType.user)
     async def resume(self, ctx: commands.Context):
         vc = ctx.voice_client
@@ -949,6 +956,7 @@ class Music(commands.Cog):
     @commands.hybrid_command(name="skip", usage="skip", help="Skips the current song.")
     @blacklist_check()
     @ignore_check()
+    @bot_has_permissions(connect=True, speak=True)
     @commands.cooldown(1, 3, commands.BucketType.user)
     async def skip(self, ctx: commands.Context):
         vc = ctx.voice_client
@@ -974,6 +982,7 @@ class Music(commands.Cog):
     @commands.hybrid_command(name="shuffle", usage="shuffle", help="Shuffles the queue.")
     @blacklist_check()
     @ignore_check()
+    @bot_has_permissions(connect=True, speak=True)
     @commands.cooldown(1, 3, commands.BucketType.user)
     async def shuffle(self, ctx: commands.Context):
         vc = ctx.voice_client
@@ -994,6 +1003,7 @@ class Music(commands.Cog):
     @commands.hybrid_command(name="stop", usage="stop", help="Stops the current song and clears the queue.")
     @blacklist_check()
     @ignore_check()
+    @bot_has_permissions(connect=True, speak=True)
     @commands.cooldown(1, 3, commands.BucketType.user)
     async def stop(self, ctx: commands.Context):
         player: wavelink.Player = cast(wavelink.Player, ctx.voice_client)
@@ -1017,6 +1027,7 @@ class Music(commands.Cog):
     @commands.hybrid_command(name="volume", aliases=["vol"], usage="volume <level>", help="Sets the volume of the player.")
     @blacklist_check()
     @ignore_check()
+    @bot_has_permissions(connect=True, speak=True)
     @commands.cooldown(1, 3, commands.BucketType.user)
     async def volume(self, ctx: commands.Context, level: int):
         vc = ctx.voice_client
@@ -1041,6 +1052,7 @@ class Music(commands.Cog):
     @commands.hybrid_command(name="queue", usage="queue", help="Shows the current queue.")
     @blacklist_check()
     @ignore_check()
+    @bot_has_permissions(connect=True, speak=True)
     @commands.cooldown(1, 3, commands.BucketType.user)
     async def queue(self, ctx: commands.Context):
         vc = ctx.voice_client
@@ -1067,6 +1079,7 @@ class Music(commands.Cog):
     @commands.hybrid_command(name="clearqueue", usage="clearqueue", help="Clears the queue.")
     @blacklist_check()
     @ignore_check()
+    @bot_has_permissions(connect=True, speak=True)
     @commands.cooldown(1, 3, commands.BucketType.user)
     async def clearqueue(self, ctx: commands.Context):
         vc = ctx.voice_client
@@ -1088,6 +1101,7 @@ class Music(commands.Cog):
     @commands.hybrid_command(name="replay", usage="replay", help="Replays the current song.")
     @blacklist_check()
     @ignore_check()
+    @bot_has_permissions(connect=True, speak=True)
     @commands.cooldown(1, 3, commands.BucketType.user)
     async def replay(self, ctx: commands.Context):
         vc = ctx.voice_client
@@ -1109,6 +1123,7 @@ class Music(commands.Cog):
     @commands.hybrid_command(name="join", aliases=["connect"], usage="join", help="Joins the voice channel.")
     @blacklist_check()
     @ignore_check()
+    @bot_has_permissions(connect=True, speak=True)
     @commands.cooldown(1, 3, commands.BucketType.user)
     async def join(self, ctx: commands.Context):
         if not await self.ensure_lavalink(ctx):
@@ -1123,6 +1138,7 @@ class Music(commands.Cog):
     @commands.hybrid_command(name="disconnect", aliases=["dc", "leave"], usage="disconnect", help="Disconnects the bot from the voice channel.")
     @blacklist_check()
     @ignore_check()
+    @bot_has_permissions(connect=True, speak=True)
     @commands.cooldown(1, 3, commands.BucketType.user)
     async def disconnect(self, ctx: commands.Context):
         vc = ctx.voice_client
@@ -1143,6 +1159,7 @@ class Music(commands.Cog):
     @commands.hybrid_command(name="seek", usage="seek <percentage>", help="Seeks to a specific percentage of the song.")
     @blacklist_check()
     @ignore_check()
+    @bot_has_permissions(connect=True, speak=True)
     @commands.cooldown(1, 3, commands.BucketType.user)
     async def seek(self, ctx: commands.Context, percentage: int):
         if not 1 <= percentage <= 100:

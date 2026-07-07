@@ -1,4 +1,4 @@
-from utils.database import open_connection
+from utils.database import get_anti_db
 from utils import emojis
 
 import discord
@@ -11,10 +11,12 @@ from utils.cv2_compat import embed_to_view, embeds_to_view
 class Antinuke(commands.Cog):
   def __init__(self, bot):
     self.bot = bot
-    asyncio.create_task(self.initialize_db())
+
+  async def cog_load(self) -> None:
+    await self.initialize_db()
 
   async def initialize_db(self):
-    self.db = await open_connection('anti.db')
+    self.db = await get_anti_db()
     await self.db.execute('''
         CREATE TABLE IF NOT EXISTS antinuke (
             guild_id INTEGER PRIMARY KEY,
@@ -201,7 +203,10 @@ class Antinuke(commands.Cog):
 
   @commands.Cog.listener()
   async def on_interaction(self, interaction: discord.Interaction):
-    if interaction.data.get('custom_id') == 'show_punishment':
+    if interaction.type is not discord.InteractionType.component:
+      return
+    if not interaction.data or interaction.data.get('custom_id') != 'show_punishment':
+      return
     
       embed = discord.Embed(
         title="Punishment Types for Changes Made by Unwhitelisted Admins/Mods",
@@ -222,7 +227,7 @@ class Antinuke(commands.Cog):
         ),
         color=0x000000
       )
-      embed.set_footer(text="These punishment types are fixed and assigned as required to ensure guild security/protection", icon_url=self.bot.user.avatar.url)
+      embed.set_footer(text="These punishment types are fixed and assigned as required to ensure guild security/protection", icon_url=self.bot.user.display_avatar.url)
       await interaction.response.send_message(view = embed_to_view(embed), ephemeral=True)
 
 """

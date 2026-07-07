@@ -13,7 +13,6 @@ from utils import Paginator, DescriptionEmbedPaginator, FieldPagePaginator, Text
 from utils.Tools import *
 from utils.config import OWNER_IDS
 from core import Cog, Rem, Context
-import sqlite3
 import os
 import requests
 from io import BytesIO
@@ -27,6 +26,7 @@ from utils.cv2_compat import embed_to_view, embeds_to_view
 
 
 from utils.database import connect
+from utils.badges import add_badge, remove_badge, get_user_badges, ensure_badges_table
 BADGE_URLS = {
     "owner": "https://cdn.discordapp.com/emojis/1228227536207740989.png",
     "staff": "https://cdn.discordapp.com/emojis/1228227884481515613.png",
@@ -50,49 +50,7 @@ BADGE_NAMES = {
 }
 
 
-db_folder = 'db'
-db_file = 'badges.db'
-db_path = os.path.join(db_folder, db_file)
 FONT_PATH = os.path.join('utils', 'arial.ttf')
-
-
-conn = sqlite3.connect(db_path)
-c = conn.cursor()
-
-
-c.execute('''CREATE TABLE IF NOT EXISTS badges (
-    user_id INTEGER PRIMARY KEY,
-    owner INTEGER DEFAULT 0,
-    staff INTEGER DEFAULT 0,
-    partner INTEGER DEFAULT 0,
-    sponsor INTEGER DEFAULT 0,
-    friend INTEGER DEFAULT 0,
-    early INTEGER DEFAULT 0,
-    vip INTEGER DEFAULT 0,
-    bug INTEGER DEFAULT 0
-)''')
-conn.commit()
-
-def add_badge(user_id, badge):
-    c.execute(f"SELECT {badge} FROM badges WHERE user_id = ?", (user_id,))
-    result = c.fetchone()
-    if result is None:
-        c.execute(f"INSERT INTO badges (user_id, {badge}) VALUES (?, 1)", (user_id,))
-    elif result[0] == 0:
-        c.execute(f"UPDATE badges SET {badge} = 1 WHERE user_id = ?", (user_id,))
-    else:
-        return False
-    conn.commit()
-    return True
-
-def remove_badge(user_id, badge):
-    c.execute(f"SELECT {badge} FROM badges WHERE user_id = ?", (user_id,))
-    result = c.fetchone()
-    if result and result[0] == 1:
-        c.execute(f"UPDATE badges SET {badge} = 0 WHERE user_id = ?", (user_id,))
-        conn.commit()
-        return True
-    return False
 
 
 def convert_time_to_seconds(time_str):
@@ -164,7 +122,9 @@ class Owner(commands.Cog):
         self.bot_owner_ids = OWNER_IDS
         asyncio.create_task(self.setup_database())
         asyncio.create_task(self.load_staff())
-        
+
+    async def cog_load(self) -> None:
+        await ensure_badges_table()
 
     async def setup_database(self):
         async with connect(self.db_path) as db:
@@ -642,12 +602,12 @@ class Owner(commands.Cog):
         if badge in BADGE_URLS or badge == 'bug' or badge == 'all':
             if badge == 'all':
                 for b in BADGE_URLS.keys():
-                    add_badge(user_id, b)
-                add_badge(user_id, 'bug')
+                    await add_badge(user_id, b)
+                await add_badge(user_id, 'bug')
                 embed = discord.Embed(description=f"All badges added to {member.mention}.", color=0x000000)
                 await ctx.send(view = embed_to_view(embed))
             else:
-                success = add_badge(user_id, badge)
+                success = await add_badge(user_id, badge)
                 if success:
                     embed = discord.Embed(description=f"Badge `{badge}` added to {member.mention}.", color=0x000000)
                 else:
@@ -668,12 +628,12 @@ class Owner(commands.Cog):
         if badge in BADGE_URLS or badge == 'bug' or badge == 'all':
             if badge == 'all':
                 for b in BADGE_URLS.keys():
-                    remove_badge(user_id, b)
-                remove_badge(user_id, 'bug')
+                    await remove_badge(user_id, b)
+                await remove_badge(user_id, 'bug')
                 embed = discord.Embed(description=f"All badges removed from {member.mention}.", color=0x000000)
                 await ctx.send(view = embed_to_view(embed))
             else:
-                success = remove_badge(user_id, badge)
+                success = await remove_badge(user_id, badge)
                 if success:
                     embed = discord.Embed(description=f"Badge `{badge}` removed from {member.mention}.", color=0x000000)
                 else:
@@ -689,7 +649,7 @@ class Owner(commands.Cog):
         help="Clear recently bot messages in channel (Bot owner only)")
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.is_owner()
-    @commands.bot_has_permissions(manage_messages=True)
+    @bot_has_permissions(manage_messages=True)
     async def _purgebot(self, ctx, prefix=None, search=100):
         
         await ctx.message.delete()
@@ -705,7 +665,7 @@ class Owner(commands.Cog):
         help="Clear recent messages of a user in channel (Bot owner only)")
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.is_owner()
-    @commands.bot_has_permissions(manage_messages=True)
+    @bot_has_permissions(manage_messages=True)
     async def purguser(self, ctx, member: discord.Member, search=100):
         
         await ctx.message.delete()
@@ -720,7 +680,9 @@ class Badges(commands.Cog):
         self.bot = bot
         self.db_path = 'db/np.db'
 
-        
+    async def cog_load(self) -> None:
+        await ensure_badges_table()
+
     @commands.hybrid_command(aliases=['profile', 'pr'])
     @blacklist_check()
     @ignore_check()
@@ -733,13 +695,8 @@ class Badges(commands.Cog):
         user_id = member.id
 
         
-        c.execute("SELECT * FROM badges WHERE user_id = ?", (user_id,))
-        badges = c.fetchone()
-
-        if badges:
-            badges = dict(zip([column[0] for column in c.description], badges))
-        else:
-            badges = {k: 0 for k in BADGE_URLS.keys()}
+        badge_data = await get_user_badges(user_id)
+        badges = {**{k: 0 for k in BADGE_URLS.keys()}, **badge_data}
 
         
         badge_size = 120

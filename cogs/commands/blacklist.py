@@ -8,7 +8,7 @@ from discord.ext import menus
 import os
 from utils.Tools import *
 from typing import Union
-from utils.paginator import Paginator as sonu
+from utils.paginator import Paginator
 from utils.cv2_compat import embed_to_view, embeds_to_view
 
  
@@ -32,7 +32,7 @@ class BlacklistWordSource(menus.ListPageSource):
         return embed
 
 
-DB_PATH = "db/blword.db"
+DB_PATH = "blword.db"
 
  
 async def create_blacklist_table():
@@ -71,14 +71,38 @@ async def create_bypass_roles_table():
         await db.commit()
 
 
+async def initialize_blacklist_tables() -> None:
+    async with connect(DB_PATH) as db:
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS blacklist (
+                guild_id TEXT,
+                word TEXT,
+                PRIMARY KEY (guild_id, word)
+            )
+        """)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS bypass (
+                guild_id TEXT,
+                user_id INTEGER,
+                PRIMARY KEY (guild_id, user_id)
+            )
+        """)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS bypass_roles (
+                guild_id TEXT,
+                role_id INTEGER,
+                PRIMARY KEY (guild_id, role_id)
+            )
+        """)
+        await db.commit()
 
 
 class Blacklist(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        asyncio.create_task(create_blacklist_table())
-        asyncio.create_task(create_bypass_table())
-        asyncio.create_task(create_bypass_roles_table())
+
+    async def cog_load(self) -> None:
+        await initialize_blacklist_tables()
         
 ############ FUNCTIONS ############
     async def is_word_blacklisted(self, guild_id, word):
@@ -199,7 +223,7 @@ class Blacklist(commands.Cog):
             "➜ `blacklistword bypass list` - Show the list of bypassed roles/users."
         ]
 
-        paginator = sonu(
+        paginator = Paginator(
             source=BlacklistWordSource(commands_list),
             ctx=ctx
         )

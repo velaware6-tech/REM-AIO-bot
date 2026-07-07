@@ -28,9 +28,10 @@ from .commands.timer import Timer
 from .commands.blacklist import Blacklist
 from .commands.block import Block
 from .commands.nightmode import Nightmode
-#from .commands.imagine import AiStuffCog
+from .commands.imagine import AiStuffCog
 from .commands.owner import Badges
 from .commands.map import Map
+from .commands.image import ImageCommands
 from .commands.autoresponder import AutoResponder
 from .commands.customrole import Customrole
 from .commands.autorole import AutoRole
@@ -56,7 +57,7 @@ from .commands.owner2 import Global
 from .commands.qr import QR
 from .commands.vanityroles import VanityRoles
 from .commands.reactionroles import ReactionRoles 
-#from .commands.InviteTracker import InviteTracker
+from .commands.InviteTracker import InviteTracker
 from .commands.messages import Messages
 from .commands.fastgreet import FastGreet
 
@@ -155,9 +156,10 @@ log = logging.getLogger(__name__)
 COGS_TO_LOAD = [
     Help, General, Music, Automod, Welcomer, Fun, Games, Extra, Voice, Owner,
     Customrole, afk, Embed, Media, Ignore, Invcrole, Giveaway, Steal, EmojiSync,
-    Ship, Timer, Blacklist, Block, Nightmode, Badges, Antinuke, Whitelist,
+    Ship, Timer, Blacklist, Block, Nightmode, Badges, AiStuffCog, InviteTracker,
+    Antinuke, Whitelist,
     Unwhitelist, Extraowner, Slots, Blackjack, Stats, Emergency, Status,
-    NoPrefix, FilterCog, Global, Map, TicketSystem, Logging, QR, VanityRoles,
+    NoPrefix, FilterCog, Global, Map, ImageCommands, TicketSystem, Logging, QR, VanityRoles,
     ReactionRoles, Messages, TranslateCog, FastGreet, Jail,
     _antinuke, _extra, _general, _automod, _moderation, _music, _fun, _games,
     _ignore, _server, _voice, _welcome, _giveaway, _ticket, Loggingdrop,

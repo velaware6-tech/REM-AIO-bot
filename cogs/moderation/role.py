@@ -15,7 +15,7 @@ import requests
 import aiohttp
 import time
 from datetime import datetime, timezone, timedelta
-from utils.cv2_compat import embed_to_view, embeds_to_view
+from utils.cv2_compat import embed_to_view, embeds_to_view, sync_panel_message
 
 
 time_regex = re.compile(r"(?:(\d{1,5})(h|s|m|d))+?")
@@ -49,6 +49,7 @@ class Role(commands.Cog):
   @ignore_check()
   @commands.cooldown(1, 5, commands.BucketType.user)
   @commands.has_permissions(manage_roles=True)
+  @bot_has_permissions(manage_roles=True)
   @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
   @commands.guild_only()
   @top_check()
@@ -113,12 +114,11 @@ class Role(commands.Cog):
 
 
   @role.command(help="Give role to member for particular time")
-  @commands.bot_has_permissions(manage_roles=True)
   @blacklist_check()
   @ignore_check()
   @commands.cooldown(1, 7, commands.BucketType.user)
   @commands.has_permissions(manage_roles=True)
-  @commands.bot_has_permissions(manage_roles=True)
+  @bot_has_permissions(manage_roles=True)
   async def temp(self, ctx, role: discord.Role, time, *, user: discord.Member):
     if ctx.author != ctx.guild.owner and role.position >= ctx.author.top_role.position:
         embed = discord.Embed(
@@ -160,7 +160,7 @@ class Role(commands.Cog):
   @top_check()
   @commands.cooldown(1, 7, commands.BucketType.user)
   @commands.has_permissions(manage_roles=True)
-  @commands.bot_has_permissions(manage_roles=True)
+  @bot_has_permissions(manage_roles=True)
   async def delete(self, ctx, *, role: discord.Role):
     if ctx.author != ctx.guild.owner and role.position >= ctx.author.top_role.position:
         embed = discord.Embed(
@@ -209,7 +209,7 @@ class Role(commands.Cog):
   @top_check()
   @commands.cooldown(1, 7, commands.BucketType.user)
   @commands.has_permissions(administrator=True)
-  @commands.bot_has_permissions(manage_roles=True)
+  @bot_has_permissions(manage_roles=True)
   async def create(self, ctx, *, name):
     embed = discord.Embed(
         description=f"Successfully created a role named {name}.",
@@ -227,7 +227,7 @@ class Role(commands.Cog):
   @ignore_check()
   @commands.cooldown(1, 10, commands.BucketType.user)
   @commands.has_permissions(administrator=True)
-  @commands.bot_has_permissions(manage_roles=True)
+  @bot_has_permissions(manage_roles=True)
   async def rename(self, ctx, role: discord.Role, *, newname):
     
     if role.position >= ctx.author.top_role.position:
@@ -268,6 +268,7 @@ class Role(commands.Cog):
   @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
   @commands.guild_only()
   @commands.has_permissions(administrator=True)
+  @bot_has_permissions(manage_roles=True)
   async def role_humans(self, ctx, *, role: discord.Role):
     if ctx.author == ctx.guild.owner or ctx.author.top_role.position > ctx.guild.me.top_role.position:
         button = Button(label="Confirm",
@@ -346,6 +347,7 @@ class Role(commands.Cog):
   @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
   @commands.guild_only()
   @commands.has_permissions(administrator=True)
+  @bot_has_permissions(manage_roles=True)
   async def role_bots(self, ctx, *, role: discord.Role):
     if ctx.author == ctx.guild.owner or ctx.author.top_role.position > ctx.guild.me.top_role.position:
         button = Button(label="Confirm",
@@ -424,6 +426,7 @@ class Role(commands.Cog):
   @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
   @commands.guild_only()
   @commands.has_permissions(administrator=True)
+  @bot_has_permissions(manage_roles=True)
   async def role_unverified(self, ctx, *, role: discord.Role):
     if ctx.author == ctx.guild.owner or ctx.author.top_role.position > ctx.guild.me.top_role.position:
         button = Button(label="Confirm",
@@ -497,6 +500,7 @@ class Role(commands.Cog):
   @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
   @commands.guild_only()
   @commands.has_permissions(administrator=True)
+  @bot_has_permissions(manage_roles=True)
   async def role_all(self, ctx, *, role: discord.Role):
     if ctx.author == ctx.guild.owner or ctx.author.top_role.position > ctx.guild.me.top_role.position:
         button = Button(label="Confirm",
@@ -587,6 +591,7 @@ class Role(commands.Cog):
   @ignore_check()
   @commands.cooldown(1, 10, commands.BucketType.user)
   @commands.has_permissions(administrator=True)
+  @bot_has_permissions(manage_roles=True)
   async def rrole_humans(self, ctx, *, role: discord.Role):
     if ctx.author == ctx.guild.owner or ctx.author.top_role.position > ctx.guild.me.top_role.position:
         button = Button(label="Confirm",
@@ -664,6 +669,7 @@ class Role(commands.Cog):
   @ignore_check()
   @commands.cooldown(1, 10, commands.BucketType.user)
   @commands.has_permissions(administrator=True)
+  @bot_has_permissions(manage_roles=True)
   async def rrole_bots(self, ctx, *, role: discord.Role):
     if ctx.author == ctx.guild.owner or ctx.author.top_role.position > ctx.guild.me.top_role.position:
         button = Button(label="Confirm",
@@ -741,6 +747,7 @@ class Role(commands.Cog):
   @ignore_check()
   @commands.cooldown(1, 10, commands.BucketType.user)
   @commands.has_permissions(administrator=True)
+  @bot_has_permissions(manage_roles=True)
   async def rrole_all(self, ctx, *, role: discord.Role):
     if ctx.author == ctx.guild.owner or ctx.author.top_role.position > ctx.guild.me.top_role.position:
         button = Button(label="Confirm",
@@ -816,6 +823,7 @@ class Role(commands.Cog):
   @ignore_check()
   @commands.cooldown(1, 10, commands.BucketType.user)
   @commands.has_permissions(administrator=True)
+  @bot_has_permissions(manage_roles=True)
   async def rrole_unverified(self, ctx, *, role: discord.Role):
     if ctx.author == ctx.guild.owner or ctx.author.top_role.position > ctx.guild.me.top_role.position:
         button = Button(label="Yes",

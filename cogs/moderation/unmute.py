@@ -5,7 +5,7 @@ from discord.ext import commands
 from discord import ui
 from utils.Tools import *
 from datetime import timedelta
-from utils.cv2_compat import embed_to_view, embeds_to_view
+from utils.cv2_compat import embed_to_view, embeds_to_view, sync_panel_message
 
 class MuteUnmuteView(ui.View):
     def __init__(self, user, author):
@@ -21,14 +21,7 @@ class MuteUnmuteView(ui.View):
         return True
 
     async def on_timeout(self):
-        for item in self.children:
-            if item.label != "Delete":
-                item.disabled = True
-        if self.message:
-            try:
-                await self.message.edit(view=self)
-            except Exception:
-                pass
+        await sync_panel_message(self, skip_labels=("Delete",))
 
     @ui.button(label="Add Timeout", style=discord.ButtonStyle.danger)
     async def mute(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -36,10 +29,7 @@ class MuteUnmuteView(ui.View):
         await interaction.response.send_modal(modal)
 
         
-        for item in self.children:
-            if item.label != "Delete":
-                item.disabled = True
-        await self.message.edit(view=self)
+        await sync_panel_message(self, skip_labels=("Delete",))
 
     @ui.button(style=discord.ButtonStyle.gray, emoji=f"{emojis.DELETE}")
     async def delete(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -140,7 +130,7 @@ class Unmute(commands.Cog):
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     @commands.guild_only()
     @commands.has_permissions(moderate_members=True)
-    @commands.bot_has_permissions(moderate_members=True)
+    @bot_has_permissions(moderate_members=True)
     async def unmute(self, ctx, user: discord.Member):
         if not user.timed_out_until or user.timed_out_until <= discord.utils.utcnow():
             embed = discord.Embed(description="**Requested User is not muted in this server.**", color=self.color)

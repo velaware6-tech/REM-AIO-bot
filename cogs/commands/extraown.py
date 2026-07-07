@@ -1,4 +1,4 @@
-from utils.database import open_connection
+from utils.database import get_anti_db
 from utils import emojis
 
 import asyncio
@@ -12,10 +12,12 @@ from utils.cv2_compat import embed_to_view, embeds_to_view
 class Extraowner(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        asyncio.create_task(self.initialize_db())
+
+    async def cog_load(self) -> None:
+        await self.initialize_db()
 
     async def initialize_db(self):
-        self.db = await open_connection('anti.db')
+        self.db = await get_anti_db()
         await self.db.execute('''
             CREATE TABLE IF NOT EXISTS extraowners (
                 guild_id INTEGER PRIMARY KEY,
@@ -34,7 +36,7 @@ class Extraowner(commands.Cog):
     async def extraowner(self, ctx, option: str = None, user: discord.Member = None):
         guild_id = ctx.guild.id
 
-        if ctx.guild.member_count < 2:
+        if ctx.guild.member_count < 30:
             embed = discord.Embed(
                 description="❌ | Your Server Doesn't Meet My 30 Member Criteria",
                 color=0x000000

@@ -82,7 +82,7 @@ class Message(commands.Cog):
   @ignore_check()
   @commands.cooldown(1, 3, commands.BucketType.user)
   @commands.has_permissions(manage_messages=True)
-  @commands.bot_has_permissions(manage_messages=True)
+  @bot_has_permissions(manage_messages=True)
   async def clear(self, ctx, Choice: Union[discord.Member, int], Amount: int = None):
         await ctx.message.delete()
 
@@ -100,7 +100,7 @@ class Message(commands.Cog):
   @ignore_check()
   @commands.cooldown(1, 3, commands.BucketType.user)
   @commands.has_permissions(manage_messages=True)
-  @commands.bot_has_permissions(manage_messages=True)
+  @bot_has_permissions(manage_messages=True)
   async def embeds(self, ctx, search=100):
         await ctx.message.delete()
         await do_removal(ctx, search, lambda e: len(e.embeds))
@@ -111,7 +111,7 @@ class Message(commands.Cog):
   @ignore_check()
   @commands.cooldown(1, 3, commands.BucketType.user)
   @commands.has_permissions(manage_messages=True)
-  @commands.bot_has_permissions(manage_messages=True)
+  @bot_has_permissions(manage_messages=True)
   async def files(self, ctx, search=100):
 
         await ctx.message.delete()
@@ -122,7 +122,7 @@ class Message(commands.Cog):
   @ignore_check()
   @commands.cooldown(1, 3, commands.BucketType.user)
   @commands.has_permissions(manage_messages=True)
-  @commands.bot_has_permissions(manage_messages=True)
+  @bot_has_permissions(manage_messages=True)
   async def images(self, ctx, search=100):
 
         await ctx.message.delete()
@@ -134,7 +134,7 @@ class Message(commands.Cog):
   @ignore_check()
   @commands.cooldown(1, 3, commands.BucketType.user)
   @commands.has_permissions(manage_messages=True)
-  @commands.bot_has_permissions(manage_messages=True)
+  @bot_has_permissions(manage_messages=True)
   async def _remove_all(self, ctx, search=100):
 
         await ctx.message.delete()
@@ -142,7 +142,7 @@ class Message(commands.Cog):
 
   @clear.command(help="Clears the messages of a specific user")
   @commands.has_permissions(manage_messages=True)
-  @commands.bot_has_permissions(manage_messages=True)
+  @bot_has_permissions(manage_messages=True)
   async def user(self, ctx, member: discord.Member, search=100):
 
         await ctx.message.delete()
@@ -155,7 +155,7 @@ class Message(commands.Cog):
   @ignore_check()
   @commands.cooldown(1, 3, commands.BucketType.user)
   @commands.has_permissions(manage_messages=True)
-  @commands.bot_has_permissions(manage_messages=True)
+  @bot_has_permissions(manage_messages=True)
   async def contains(self, ctx, *, string: str):
 
         await ctx.message.delete()
@@ -169,7 +169,7 @@ class Message(commands.Cog):
   @ignore_check()
   @commands.cooldown(1, 3, commands.BucketType.user)
   @commands.has_permissions(manage_messages=True)
-  @commands.bot_has_permissions(manage_messages=True)
+  @bot_has_permissions(manage_messages=True)
   async def _bot(self, ctx, prefix=None, search=100):
 
         await ctx.message.delete()
@@ -184,7 +184,7 @@ class Message(commands.Cog):
   @ignore_check()
   @commands.cooldown(1, 3, commands.BucketType.user)
   @commands.has_permissions(manage_messages=True)
-  @commands.bot_has_permissions(manage_messages=True)
+  @bot_has_permissions(manage_messages=True)
 
   async def _emoji(self, ctx, search=100):
 
@@ -201,7 +201,7 @@ class Message(commands.Cog):
   @ignore_check()
   @commands.cooldown(1, 3, commands.BucketType.user)
   @commands.has_permissions(manage_messages=True)
-  @commands.bot_has_permissions(manage_messages=True)
+  @bot_has_permissions(manage_messages=True)
   async def _reactions(self, ctx, search=100):
 
         await ctx.message.delete()
@@ -227,7 +227,7 @@ class Message(commands.Cog):
   @ignore_check()
   @commands.cooldown(1, 3, commands.BucketType.user)
   @commands.has_permissions(manage_messages=True)
-  @commands.bot_has_permissions(manage_messages=True)
+  @bot_has_permissions(manage_messages=True)
   async def _purgebot(self, ctx, prefix=None, search=100):
 
     await ctx.message.delete()
@@ -245,7 +245,7 @@ class Message(commands.Cog):
   @ignore_check()
   @commands.cooldown(1, 3, commands.BucketType.user)
   @commands.has_permissions(manage_messages=True)
-  @commands.bot_has_permissions(manage_messages=True)
+  @bot_has_permissions(manage_messages=True)
   async def purguser(self, ctx, member: discord.Member, search=100):
       
       await ctx.message.delete()
