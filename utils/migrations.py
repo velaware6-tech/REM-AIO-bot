@@ -233,12 +233,66 @@ async def run_startup_migrations() -> None:
             """
             CREATE TABLE IF NOT EXISTS afk (
                 user_id INTEGER PRIMARY KEY,
-                reason TEXT,
-                since TEXT
+                AFK TEXT NOT NULL DEFAULT 'False',
+                reason TEXT NOT NULL DEFAULT 'None',
+                time INTEGER NOT NULL DEFAULT 0,
+                mentions INTEGER NOT NULL DEFAULT 0,
+                dm TEXT NOT NULL DEFAULT 'False'
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS afk_guild (
+                user_id INTEGER NOT NULL,
+                guild_id INTEGER NOT NULL,
+                PRIMARY KEY (user_id, guild_id)
             )
             """,
         ],
     )
+
+    async with connect("afk.db") as db:
+        async with db.execute("PRAGMA table_info(afk)") as cursor:
+            columns = {row[1] for row in await cursor.fetchall()}
+
+        if columns and "AFK" not in columns:
+            log.info("Upgrading afk.db schema to the current AFK table layout.")
+            await db.execute(
+                """
+                CREATE TABLE IF NOT EXISTS afk_new (
+                    user_id INTEGER PRIMARY KEY,
+                    AFK TEXT NOT NULL DEFAULT 'False',
+                    reason TEXT NOT NULL DEFAULT 'None',
+                    time INTEGER NOT NULL DEFAULT 0,
+                    mentions INTEGER NOT NULL DEFAULT 0,
+                    dm TEXT NOT NULL DEFAULT 'False'
+                )
+                """
+            )
+            if "since" in columns:
+                await db.execute(
+                    """
+                    INSERT INTO afk_new (user_id, reason, time)
+                    SELECT user_id,
+                           COALESCE(reason, 'None'),
+                           CASE
+                               WHEN since GLOB '[0-9]*' THEN CAST(since AS INTEGER)
+                               ELSE 0
+                           END
+                    FROM afk
+                    """
+                )
+            elif "user_id" in columns:
+                await db.execute(
+                    """
+                    INSERT INTO afk_new (user_id, reason)
+                    SELECT user_id, COALESCE(reason, 'None')
+                    FROM afk
+                    """
+                )
+            await db.execute("DROP TABLE afk")
+            await db.execute("ALTER TABLE afk_new RENAME TO afk")
+            await db.commit()
+            log.info("afk.db schema upgrade complete.")
 
     await execute_many(
         "giveaways.db",
