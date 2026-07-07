@@ -17,21 +17,6 @@
 
 <p align="center">
 
-  <!-- primary action buttons -->
-  <a href="https://discord.com/oauth2/authorize?client_id=1144179659735572640&permissions=8&scope=bot%20applications.commands">
-    <img src="https://img.shields.io/badge/♡_Invite_REM-ff6b9d?style=for-the-badge&logo=discord&logoColor=white" alt="Invite REM">
-  </a>
-  <a href="https://discord.gg/stVsvE9rhT">
-    <img src="https://img.shields.io/badge/♡_Support_Server-ffb7c5?style=for-the-badge&logo=discord&logoColor=white" alt="Support Server">
-  </a>
-  <a href="https://github.com/devrock07/REM-AIO">
-    <img src="https://img.shields.io/badge/♡_GitHub-f8c8dc?style=for-the-badge&logo=github&logoColor=black" alt="GitHub">
-  </a>
-
-</p>
-
-<p align="center">
-
   <!-- status badges -->
   <img src="https://img.shields.io/badge/Python-3.11+-ff9ec8?style=flat-square&logo=python&logoColor=white" alt="Python 3.11+">
   <img src="https://img.shields.io/badge/discord.py-2.x-ffb6c1?style=flat-square&logo=discord&logoColor=white" alt="discord.py">
@@ -297,30 +282,11 @@ logs/rem.log
 
 ## ♡ License & Credits
 
-<p align="center">
-  <a href="LICENSE">
-    <img src="https://img.shields.io/badge/License-MIT-ffc0cb?style=for-the-badge" alt="MIT License">
-  </a>
-</p>
-
 **MIT License** — Copyright (c) 2026 **devrock**
 
 See [LICENSE](LICENSE) for full terms.
 
-<br>
-
 <p align="center">
   <b>♡ REM ALL IN ONE BOT ♡</b><br>
-  made with love by <b>devrock</b><br><br>
-  <a href="https://discord.com/oauth2/authorize?client_id=1144179659735572640&permissions=8&scope=bot%20applications.commands">
-    <img src="https://img.shields.io/badge/invite_me-ff6b9d?style=for-the-badge&logo=discord&logoColor=white" alt="Invite">
-  </a>
-  <a href="https://discord.gg/stVsvE9rhT">
-    <img src="https://img.shields.io/badge/support-ffb7c5?style=for-the-badge&logo=discord&logoColor=white" alt="Support">
-  </a>
-  <a href="https://github.com/devrock07/REM-AIO">
-    <img src="https://img.shields.io/badge/github-f8c8dc?style=for-the-badge&logo=github&logoColor=black" alt="GitHub">
-  </a>
-  <br><br>
-  <i>♡(˶ᵔ ᵕ ᵔ˶)♡ thanks for choosing REM~</i>
+  made with love by <b>devrock</b>
 </p>
