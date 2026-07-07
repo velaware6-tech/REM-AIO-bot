@@ -18,15 +18,8 @@ class Extraowner(commands.Cog):
 
     async def initialize_db(self):
         self.db = await get_anti_db()
-        await self.db.execute('''
-            CREATE TABLE IF NOT EXISTS extraowners (
-                guild_id INTEGER PRIMARY KEY,
-                owner_id INTEGER
-            )
-        ''')
-        await self.db.commit()
 
-    @commands.hybrid_command(name='extraowner', aliases=["owner"], help="Adds Extraowner to the server")
+    @commands.hybrid_command(name='extraowner', aliases=["exown"], help="Adds Extraowner to the server")
     @blacklist_check()
     @ignore_check()
     @commands.cooldown(1, 10, commands.BucketType.user)

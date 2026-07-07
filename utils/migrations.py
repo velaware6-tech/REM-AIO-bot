@@ -327,6 +327,49 @@ async def run_startup_migrations() -> None:
     )
 
     await execute_many(
+        "jail.db",
+        [
+            """
+            CREATE TABLE IF NOT EXISTS jailed (
+                guild_id TEXT,
+                user_id TEXT,
+                mod_id TEXT,
+                reason TEXT,
+                jailed_at TEXT,
+                duration INTEGER,
+                roles TEXT,
+                PRIMARY KEY (guild_id, user_id)
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS jail_settings (
+                guild_id TEXT PRIMARY KEY,
+                jail_role TEXT,
+                jail_channel TEXT,
+                mod_role TEXT,
+                log_channel TEXT
+            )
+            """,
+        ],
+    )
+
+    await execute_many(
+        "vanity.db",
+        [
+            """
+            CREATE TABLE IF NOT EXISTS vanity_roles (
+                guild_id INTEGER,
+                vanity TEXT NOT NULL,
+                role_id INTEGER NOT NULL,
+                log_channel_id INTEGER NOT NULL,
+                current_status TEXT,
+                PRIMARY KEY (guild_id, vanity)
+            )
+            """,
+        ],
+    )
+
+    await execute_many(
         "invite_tracker.db",
         [
             """

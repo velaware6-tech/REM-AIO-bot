@@ -117,7 +117,7 @@ class Owner(commands.Cog):
         self.client = client
         self.staff = set()
         self.np_cache = []
-        self.db_path = 'db/np.db'
+        self.db_path = 'np.db'
         self.stop_tour = False
         self.bot_owner_ids = OWNER_IDS
         asyncio.create_task(self.setup_database())
@@ -678,7 +678,7 @@ class Owner(commands.Cog):
 class Badges(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.db_path = 'db/np.db'
+        self.db_path = 'np.db'
 
     async def cog_load(self) -> None:
         await ensure_badges_table()

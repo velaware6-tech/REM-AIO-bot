@@ -121,10 +121,21 @@ class NoPrefix(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.staff = set()
-        self.db_path = 'db/np.db'
-        asyncio.create_task(self.load_staff())
-        asyncio.create_task(self.setup_database())
-        self.expiry_check.start()
+        self.db_path = 'np.db'
+        self._expiry_started = False
+
+    async def cog_load(self) -> None:
+        await self.setup_database()
+        await self.load_staff()
+
+    async def cog_unload(self) -> None:
+        self.expiry_check.cancel()
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        if not self._expiry_started and not self.expiry_check.is_running():
+            self._expiry_started = True
+            self.expiry_check.start()
 
     async def setup_database(self):
         async with connect(self.db_path) as db:
@@ -162,10 +173,6 @@ class NoPrefix(commands.Cog):
 
 
     async def load_staff(self):
-        try:
-            await self.client.wait_until_ready()
-        except RuntimeError:
-            pass
         async with connect(self.db_path) as db:
             async with db.execute('SELECT id FROM staff') as cursor:
                 self.staff = {row[0] for row in await cursor.fetchall()}
@@ -229,13 +236,6 @@ class NoPrefix(commands.Cog):
                             pass
                         except discord.HTTPException:
                             pass
-
-    @expiry_check.before_loop
-    async def before_expiry_check(self):
-        try:
-            await self.client.wait_until_ready()
-        except RuntimeError:
-            return
 
     @commands.group(name="np", help="Allows you to add someone to the no-prefix list (owner-only command)")
     @commands.check(is_owner_or_staff)

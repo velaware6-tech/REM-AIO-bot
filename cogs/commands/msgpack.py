@@ -88,3 +88,7 @@ class Messagespack(commands.Cog):
         )
         await self.db.commit()
         await ctx.send(f"All messages cleared for {member.mention}.")
+
+
+async def setup(bot):
+    await bot.add_cog(Messagespack(bot))

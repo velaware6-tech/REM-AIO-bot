@@ -59,6 +59,7 @@ from .commands.vanityroles import VanityRoles
 from .commands.reactionroles import ReactionRoles 
 from .commands.InviteTracker import InviteTracker
 from .commands.messages import Messages
+from .commands.msgpack import Messagespack
 from .commands.fastgreet import FastGreet
 
 #from .commands.activity import Activity
@@ -160,7 +161,7 @@ COGS_TO_LOAD = [
     Antinuke, Whitelist,
     Unwhitelist, Extraowner, Slots, Blackjack, Stats, Emergency, Status,
     NoPrefix, FilterCog, Global, Map, ImageCommands, TicketSystem, Logging, QR, VanityRoles,
-    ReactionRoles, Messages, TranslateCog, FastGreet, Jail,
+    ReactionRoles, Messages, Messagespack, TranslateCog, FastGreet, Jail,
     _antinuke, _extra, _general, _automod, _moderation, _music, _fun, _games,
     _ignore, _server, _voice, _welcome, _giveaway, _ticket, Loggingdrop,
     _vanity, _inviteTracker,

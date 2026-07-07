@@ -11,7 +11,7 @@ from typing import List, Tuple
 from utils.cv2_compat import embed_to_view, embeds_to_view
 
 DATABASE_PATH = 'db/customrole.db'
-DATABASE_PATH2 = 'db/np.db'
+DATABASE_PATH2 = 'np.db'
 
 
 class Customrole(commands.Cog):

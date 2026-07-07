@@ -62,10 +62,15 @@ class Giveaway(commands.Cog):
         await self.connection.commit()
         self.cursor = await self.connection.cursor()
         await self.check_for_ended_giveaways()
-        self.GiveawayEnd.start()
 
     async def cog_unload(self) -> None:
+        self.GiveawayEnd.cancel()
         await self.connection.close()
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        if not self.GiveawayEnd.is_running():
+            self.GiveawayEnd.start()
 
     async def check_for_ended_giveaways(self):
         await self.cursor.execute("SELECT ends_at, guild_id, message_id, host_id, winners, prize, channel_id FROM Giveaway WHERE ends_at <= ?", (datetime.datetime.now().timestamp(),))
@@ -323,8 +328,8 @@ class Giveaway(commands.Cog):
             message = await ctx.fetch_message(ctx.message.reference.message_id)
 
             users = [i.id async for i in message.reactions[0].users()]
-            try: users.remove(self.bot.user.id)
-            except: pass
+            if self.bot.user and self.bot.user.id in users:
+                users.remove(self.bot.user.id)
 
             if len(users) < 1:
                 await message.reply(f"No one won the **{re[5]}** giveaway, due to not enough participants.")

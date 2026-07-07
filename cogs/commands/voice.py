@@ -63,7 +63,7 @@ class Voice(commands.Cog):
     @blacklist_check()
     @ignore_check()
     @commands.has_permissions(administrator=True)
-    #@commands.bot_has_permissions(move_members=True)
+    @bot_has_permissions(move_members=True)
     
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
@@ -97,7 +97,10 @@ class Voice(commands.Cog):
     @vc.command(name="mute",
                 help="mute a member in voice channel .",
                 usage="voice mute <member>")
+    @blacklist_check()
+    @ignore_check()
     @commands.has_guild_permissions(mute_members=True)
+    @bot_has_permissions(mute_members=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     async def _mute(self, ctx, *, member: discord.Member = None):
@@ -155,7 +158,7 @@ class Voice(commands.Cog):
     @blacklist_check()
     @ignore_check()
     @commands.has_guild_permissions(mute_members=True)
-    #@commands.bot_has_permissions(mute_members=True)
+    @bot_has_permissions(mute_members=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     async def vcunmute(self, ctx, *, member: discord.Member):
@@ -196,7 +199,7 @@ class Voice(commands.Cog):
     @blacklist_check()
     @ignore_check()
     @commands.has_permissions(administrator=True)
-    #@commands.bot_has_permissions(mute_members=True)
+    @bot_has_permissions(mute_members=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     async def _muteall(self, ctx):
@@ -233,7 +236,7 @@ class Voice(commands.Cog):
     @blacklist_check()
     @ignore_check()
     @commands.has_permissions(administrator=True)
-    #@commands.bot_has_permissions(mute_members=True)
+    @bot_has_permissions(mute_members=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     async def _unmuteall(self, ctx):
@@ -270,7 +273,7 @@ class Voice(commands.Cog):
     @blacklist_check()
     @ignore_check()
     @commands.has_guild_permissions(deafen_members=True)
-    #@commands.bot_has_permissions(deafen_members=True)
+    @bot_has_permissions(deafen_members=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     async def _deafen(self, ctx, *, member: discord.Member):
@@ -311,7 +314,7 @@ class Voice(commands.Cog):
     @blacklist_check()
     @ignore_check()
     @commands.has_guild_permissions(deafen_members=True)
-    #@commands.bot_has_permissions(deafen_members=True)
+    @bot_has_permissions(deafen_members=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     async def _undeafen(self, ctx, *, member: discord.Member):
@@ -353,7 +356,7 @@ class Voice(commands.Cog):
     @blacklist_check()
     @ignore_check()
     @commands.has_permissions(administrator=True)
-    #@commands.bot_has_permissions(deafen_members=True)
+    @bot_has_permissions(deafen_members=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     async def _deafenall(self, ctx):
@@ -390,7 +393,7 @@ class Voice(commands.Cog):
     @blacklist_check()
     @ignore_check()
     @commands.has_permissions(administrator=True)
-    #@commands.bot_has_permissions(deafen_members=True)
+    @bot_has_permissions(deafen_members=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     async def _undeafall(self, ctx):
@@ -428,7 +431,7 @@ class Voice(commands.Cog):
     @blacklist_check()
     @ignore_check()
     @commands.has_permissions(administrator=True)
-    #@commands.bot_has_permissions(move_members=True)
+    @bot_has_permissions(move_members=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     async def _moveall(self, ctx, *, channel: discord.VoiceChannel):
@@ -478,7 +481,7 @@ class Voice(commands.Cog):
     @blacklist_check()
     @ignore_check()
     @commands.has_permissions(administrator=True)
-    #@commands.bot_has_permissions(move_members=True)
+    @bot_has_permissions(move_members=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     async def _pullall(self, ctx, *, channel: discord.VoiceChannel):
@@ -518,7 +521,7 @@ class Voice(commands.Cog):
     @blacklist_check()
     @ignore_check()
     @commands.has_permissions(administrator=True)
-    #@commands.bot_has_permissions(move_members=True)
+    @bot_has_permissions(move_members=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     async def _move(self, ctx, member: discord.Member, channel: discord.VoiceChannel):
@@ -560,7 +563,7 @@ class Voice(commands.Cog):
     @blacklist_check()
     @ignore_check()
     @commands.has_permissions(administrator=True)
-    #@commands.bot_has_permissions(move_members=True)
+    @bot_has_permissions(move_members=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
     async def _pull(self, ctx, member: discord.Member):

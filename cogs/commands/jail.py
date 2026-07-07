@@ -45,7 +45,6 @@ class Jail(commands.Cog):
         except Exception:
             await self.db.execute("ALTER TABLE jailed ADD COLUMN roles TEXT;")
         await self.db.commit()
-        self.jail_check_loop.start()
 
     async def cog_unload(self) -> None:
         self.jail_check_loop.cancel()
@@ -104,9 +103,10 @@ class Jail(commands.Cog):
                     if member:
                         await self.unjail_member(guild, member)
 
-    @jail_check_loop.before_loop
-    async def before_jail_check_loop(self):
-        await self.bot.wait_until_ready()
+    @commands.Cog.listener()
+    async def on_ready(self):
+        if not self.jail_check_loop.is_running():
+            self.jail_check_loop.start()
 
     async def unjail_member(self, guild, member):
         jail_role_id = await self.get_setting(guild.id, "jail_role")

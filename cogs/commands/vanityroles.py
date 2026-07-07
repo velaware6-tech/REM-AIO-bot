@@ -1,22 +1,20 @@
-from utils.database import connect
-import asyncio
+import aiohttp
 import discord
 from discord.ext import commands, tasks
-import aiohttp
-import os
+
 from utils.Tools import *
 from utils.cv2_compat import embed_to_view, embeds_to_view
+from utils.database import connect
 
-DB_PATH = "db/vanity.db"
+DB_PATH = "vanity.db"
+
 
 class VanityRoles(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        asyncio.create_task(self.initialize_db())
-        self.vanity_checker.start()
+        self._checker_started = False
 
-    async def initialize_db(self):
-        os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    async def cog_load(self) -> None:
         async with connect(DB_PATH) as db:
             await db.execute("""
                 CREATE TABLE IF NOT EXISTS vanity_roles (
@@ -28,15 +26,20 @@ class VanityRoles(commands.Cog):
                     PRIMARY KEY (guild_id, vanity)
                 )
             """)
-            await db.commit()
-
             async with db.execute("PRAGMA table_info(vanity_roles)") as cursor:
-                columns = await cursor.fetchall()
-                column_names = [column[1] for column in columns]
-
+                column_names = [column[1] for column in await cursor.fetchall()]
             if "current_status" not in column_names:
                 await db.execute("ALTER TABLE vanity_roles ADD COLUMN current_status TEXT")
-                await db.commit()
+            await db.commit()
+
+    async def cog_unload(self) -> None:
+        self.vanity_checker.cancel()
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        if not self._checker_started and not self.vanity_checker.is_running():
+            self._checker_started = True
+            self.vanity_checker.start()
 
     @commands.group(name="vanityroles", invoke_without_command=True)
     @blacklist_check()
@@ -59,14 +62,17 @@ class VanityRoles(commands.Cog):
             description=f"Vanity: `{vanity}`\nRole: {role.mention}\nLog Channel: {channel.mention}",
             color=discord.Color.green()
         )
-        await ctx.send(view = embed_to_view(embed))
+        await ctx.send(view=embed_to_view(embed))
 
     @vanityroles.command(name="show")
     @blacklist_check()
     @ignore_check()
     async def show(self, ctx):
         async with connect(DB_PATH) as db:
-            async with db.execute("SELECT vanity, role_id, log_channel_id FROM vanity_roles WHERE guild_id = ?", (ctx.guild.id,)) as cursor:
+            async with db.execute(
+                "SELECT vanity, role_id, log_channel_id FROM vanity_roles WHERE guild_id = ?",
+                (ctx.guild.id,),
+            ) as cursor:
                 rows = await cursor.fetchall()
 
         if not rows:
@@ -79,9 +85,9 @@ class VanityRoles(commands.Cog):
             embed.add_field(
                 name=f"Vanity: `{vanity}`",
                 value=f"Role: {role.mention if role else role_id}\nLog: {channel.mention if channel else log_channel_id}",
-                inline=False
+                inline=False,
             )
-        await ctx.send(view = embed_to_view(embed))
+        await ctx.send(view=embed_to_view(embed))
 
     @vanityroles.command(name="reset")
     @blacklist_check()
@@ -95,7 +101,9 @@ class VanityRoles(commands.Cog):
     @tasks.loop(seconds=15)
     async def vanity_checker(self):
         async with connect(DB_PATH) as db:
-            async with db.execute("SELECT guild_id, vanity, role_id, log_channel_id, current_status FROM vanity_roles") as cursor:
+            async with db.execute(
+                "SELECT guild_id, vanity, role_id, log_channel_id, current_status FROM vanity_roles"
+            ) as cursor:
                 rows = await cursor.fetchall()
 
         for guild_id, vanity, role_id, log_channel_id, current_status in rows:
@@ -124,7 +132,9 @@ class VanityRoles(commands.Cog):
                         except Exception:
                             pass
                 if log_channel:
-                    await log_channel.send(f"✅ Vanity `{vanity}` is now **active**. Role assigned to {assigned} members.")
+                    await log_channel.send(
+                        f"✅ Vanity `{vanity}` is now **active**. Role assigned to {assigned} members."
+                    )
 
             elif not is_active and current_status == "active":
                 await self.update_status(guild_id, vanity, None)
@@ -137,18 +147,18 @@ class VanityRoles(commands.Cog):
                         except Exception:
                             pass
                 if log_channel:
-                    await log_channel.send(f"❌ Vanity `{vanity}` is now **inactive**. Role removed from {removed} members.")
+                    await log_channel.send(
+                        f"❌ Vanity `{vanity}` is now **inactive**. Role removed from {removed} members."
+                    )
 
     async def update_status(self, guild_id, vanity, new_status):
         async with connect(DB_PATH) as db:
-            await db.execute("""
-                UPDATE vanity_roles SET current_status = ? WHERE guild_id = ? AND vanity = ?
-            """, (new_status, guild_id, vanity))
+            await db.execute(
+                "UPDATE vanity_roles SET current_status = ? WHERE guild_id = ? AND vanity = ?",
+                (new_status, guild_id, vanity),
+            )
             await db.commit()
 
-    @vanity_checker.before_loop
-    async def before_checker(self):
-        await self.bot.wait_until_ready()
 
 async def setup(bot):
     await bot.add_cog(VanityRoles(bot))
