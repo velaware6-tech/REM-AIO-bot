@@ -4,162 +4,163 @@ from discord.ext import commands
 from core import axon, Cog
 import discord
 import logging
-from discord.ui import View, Button, Select
+from discord.ui import View, Button
+from utils.config import GUILD_JOIN_LOG_CHANNEL_ID, GUILD_LEAVE_LOG_CHANNEL_ID, serverLink
 from utils.cv2_compat import embed_to_view, embeds_to_view
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="\x1b[38;5;197m[\x1b[0m%(asctime)s\x1b[38;5;197m]\x1b[0m -> \x1b[38;5;197m%(message)s\x1b[0m",
-    datefmt="%H:%M:%S",
-)
+log = logging.getLogger(__name__)
 
-client = axon()
 
 class Guild(Cog):
     def __init__(self, client: axon):
         self.client = client
 
-    @client.event
-    @commands.Cog.listener(name="on_guild_join")
-    async def on_guild_add(self, guild):
+    @commands.Cog.listener()
+    async def on_guild_join(self, guild: discord.Guild):
         try:
-            
             rope = [inv for inv in await guild.invites() if inv.max_age == 0 and inv.max_uses == 0]
-            ch = 1327829068644876391  
-            me = self.client.get_channel(ch)
-            if me is None:
-                logging.error(f"Channel with ID {ch} not found.")
-                return
 
-            channels = len(set(self.client.get_all_channels()))
-            embed = discord.Embed(title=f"{guild.name}'s Information", color=0x000000)
-            
-            embed.set_author(name="Guild Joined")
-            embed.set_footer(text=f"Added in {guild.name}")
-
-            embed.add_field(
-                name="**__About__**",
-                value=f"**Name : ** {guild.name}\n**ID :** {guild.id}\n**Owner {emojis.OWNER} :** {guild.owner} (<@{guild.owner_id}>)\n**Created At : **{guild.created_at.month}/{guild.created_at.day}/{guild.created_at.year}\n**Members :** {len(guild.members)}",
-                inline=False
-            )
-            embed.add_field(
-                name="**__Description__**",
-                value=f"""{guild.description}""",
-                inline=False
-            )
-            embed.add_field(
-                name="**__Members__**",
-                value=f"""{emojis.RIVERSE_FUN} Members : {len(guild.members)}\n {emojis.USER} Humans : {len(list(filter(lambda m: not m.bot, guild.members)))}\n{emojis.ICONS_BOT} Bots : {len(list(filter(lambda m: m.bot, guild.members)))}
-                """,
-                inline=False
-            )
-            embed.add_field(
-                name="**__Channels__**",
-                value=f"""
-Categories : {len(guild.categories)}
-Text Channels : {len(guild.text_channels)}
-Voice Channels : {len(guild.voice_channels)}
-Threads : {len(guild.threads)}
-                """,
-                inline=False
-            )  
-            embed.add_field(name="__Bot Stats:__", 
-            value=f"Servers: `{len(self.client.guilds)}`\nUsers: `{len(self.client.users)}`\nChannels: `{channels}`", inline=False)  
-
-            if guild.icon is not None:
-                embed.set_thumbnail(url=guild.icon.url)
-
-            embed.timestamp = discord.utils.utcnow()
-            await me.send(f"{rope[0]}" if rope else "No Pre-Made Invite Found", view = embed_to_view(embed))
+            if GUILD_JOIN_LOG_CHANNEL_ID:
+                me = self.client.get_channel(GUILD_JOIN_LOG_CHANNEL_ID)
+                if me is None:
+                    log.error("Guild join log channel %s not found.", GUILD_JOIN_LOG_CHANNEL_ID)
+                else:
+                    channels = len(set(self.client.get_all_channels()))
+                    embed = discord.Embed(title=f"{guild.name}'s Information", color=0x000000)
+                    embed.set_author(name="Guild Joined")
+                    embed.set_footer(text=f"Added in {guild.name}")
+                    embed.add_field(
+                        name="**__About__**",
+                        value=(
+                            f"**Name : ** {guild.name}\n**ID :** {guild.id}\n"
+                            f"**Owner {emojis.OWNER} :** {guild.owner} (<@{guild.owner_id}>)\n"
+                            f"**Created At : **{guild.created_at.month}/{guild.created_at.day}/{guild.created_at.year}\n"
+                            f"**Members :** {len(guild.members)}"
+                        ),
+                        inline=False,
+                    )
+                    embed.add_field(name="**__Description__**", value=f"{guild.description}", inline=False)
+                    embed.add_field(
+                        name="**__Members__**",
+                        value=(
+                            f"{emojis.RIVERSE_FUN} Members : {len(guild.members)}\n"
+                            f" {emojis.USER} Humans : {len(list(filter(lambda m: not m.bot, guild.members)))}\n"
+                            f"{emojis.ICONS_BOT} Bots : {len(list(filter(lambda m: m.bot, guild.members)))}"
+                        ),
+                        inline=False,
+                    )
+                    embed.add_field(
+                        name="**__Channels__**",
+                        value=(
+                            f"Categories : {len(guild.categories)}\n"
+                            f"Text Channels : {len(guild.text_channels)}\n"
+                            f"Voice Channels : {len(guild.voice_channels)}\n"
+                            f"Threads : {len(guild.threads)}"
+                        ),
+                        inline=False,
+                    )
+                    embed.add_field(
+                        name="__Bot Stats:__",
+                        value=f"Servers: `{len(self.client.guilds)}`\nUsers: `{len(self.client.users)}`\nChannels: `{channels}`",
+                        inline=False,
+                    )
+                    if guild.icon is not None:
+                        embed.set_thumbnail(url=guild.icon.url)
+                    embed.timestamp = discord.utils.utcnow()
+                    await me.send(
+                        f"{rope[0]}" if rope else "No Pre-Made Invite Found",
+                        view=embed_to_view(embed),
+                    )
 
             if not guild.chunked:
                 await guild.chunk()
 
-            embed = discord.Embed(description=f"{emojis.ICONARROWRIGHT} Prefix For This Server is `>`\n{emojis.ICONARROWRIGHT} Get Started with `>help`\n{emojis.ICONARROWRIGHT} For detailed guides, FAQ & information, visit our **[Support Server](https://discord.gg/codexdev)**",
-    color=0xff0000)
+            embed = discord.Embed(
+                description=(
+                    f"{emojis.ICONARROWRIGHT} Prefix For This Server is `>`\n"
+                    f"{emojis.ICONARROWRIGHT} Get Started with `>help`\n"
+                    f"{emojis.ICONARROWRIGHT} For detailed guides, FAQ & information, visit our **[Support Server]({serverLink})**"
+                ),
+                color=0xFF0000,
+            )
             embed.set_author(name="Thanks for adding me!", icon_url=guild.me.display_avatar.url)
-            embed.set_footer(text="Powered by REM ALL IN ONE BOT",)
+            embed.set_footer(text="Powered by REM ALL IN ONE BOT")
             if guild.icon:
                 embed.set_thumbnail(url=guild.icon.url)
 
-            support = Button(label='Support',
-                             style=discord.ButtonStyle.link,
-                    url=f'https://dsc.gg/codexdev')
-            
+            support = Button(label="Support", style=discord.ButtonStyle.link, url=serverLink)
             view = View()
             view.add_item(support)
+
             channel = discord.utils.get(guild.text_channels, name="general")
             if not channel:
-                channels = [channel for channel in guild.text_channels if channel.permissions_for(guild.me).send_messages]
-                if channels:
-                    channel = channels[0]
-                else:
-                    logging.error(f"No channel found with send permissions in guild: {guild.name}")
-                    return
+                channels = [
+                    ch for ch in guild.text_channels
+                    if ch.permissions_for(guild.me).send_messages
+                ]
+                channel = channels[0] if channels else None
 
-            await channel.send(view = embed_to_view(embed, view = view))
+            if channel is None:
+                log.warning("No sendable channel found in guild: %s", guild.name)
+                return
 
-        except Exception as e:
-            logging.error(f"Error in on_guild_join: {e}")
+            await channel.send(view=embed_to_view(embed, view=view))
 
-    @client.event
-    @commands.Cog.listener(name="on_guild_remove")
-    async def on_guild_remove(self, guild):
+        except Exception:
+            log.exception("Error in on_guild_join for guild %s", guild.id)
+
+    @commands.Cog.listener()
+    async def on_guild_remove(self, guild: discord.Guild):
+        if not GUILD_LEAVE_LOG_CHANNEL_ID:
+            return
         try:
-            ch = 1271825683672203294  
-            idk = self.client.get_channel(ch)
+            idk = self.client.get_channel(GUILD_LEAVE_LOG_CHANNEL_ID)
             if idk is None:
-                logging.error(f"Channel with ID {ch} not found.")
+                log.error("Guild leave log channel %s not found.", GUILD_LEAVE_LOG_CHANNEL_ID)
                 return
 
             channels = len(set(self.client.get_all_channels()))
             embed = discord.Embed(title=f"{guild.name}'s Information", color=0x000000)
-        
             embed.set_author(name="Guild Removed")
             embed.set_footer(text=f"{guild.name}")
-
             embed.add_field(
                 name="**__About__**",
-                value=f"**Name : ** {guild.name}\n**ID :** {guild.id}\n**Owner {emojis.AXON_OWNER} :** {guild.owner} (<@{guild.owner_id}>)\n**Created At : **{guild.created_at.month}/{guild.created_at.day}/{guild.created_at.year}\n**Members :** {len(guild.members)}",
-                inline=False
+                value=(
+                    f"**Name : ** {guild.name}\n**ID :** {guild.id}\n"
+                    f"**Owner {emojis.AXON_OWNER} :** {guild.owner} (<@{guild.owner_id}>)\n"
+                    f"**Created At : **{guild.created_at.month}/{guild.created_at.day}/{guild.created_at.year}\n"
+                    f"**Members :** {len(guild.members)}"
+                ),
+                inline=False,
             )
-            embed.add_field(
-                name="**__Description__**",
-                value=f"""{guild.description}""",
-                inline=False
-            )
-            
-                
+            embed.add_field(name="**__Description__**", value=f"{guild.description}", inline=False)
             embed.add_field(
                 name="**__Members__**",
-                value=f"""
-Members : {len(guild.members)}
-Humans : {len(list(filter(lambda m: not m.bot, guild.members)))}
-Bots : {len(list(filter(lambda m: m.bot, guild.members)))}
-                """,
-                inline=False
+                value=(
+                    f"Members : {len(guild.members)}\n"
+                    f"Humans : {len(list(filter(lambda m: not m.bot, guild.members)))}\n"
+                    f"Bots : {len(list(filter(lambda m: m.bot, guild.members)))}"
+                ),
+                inline=False,
             )
             embed.add_field(
                 name="**__Channels__**",
-                value=f"""
-Categories : {len(guild.categories)}
-Text Channels : {len(guild.text_channels)}
-Voice Channels : {len(guild.voice_channels)}
-Threads : {len(guild.threads)}
-                """,
-                inline=False
-            )   
-            embed.add_field(name="__Bot Stats:__", 
-            value=f"Servers: `{len(self.client.guilds)}`\nUsers: `{len(self.client.users)}`\nChannels: `{channels}`", inline=False)
-
+                value=(
+                    f"Categories : {len(guild.categories)}\n"
+                    f"Text Channels : {len(guild.text_channels)}\n"
+                    f"Voice Channels : {len(guild.voice_channels)}\n"
+                    f"Threads : {len(guild.threads)}"
+                ),
+                inline=False,
+            )
+            embed.add_field(
+                name="__Bot Stats:__",
+                value=f"Servers: `{len(self.client.guilds)}`\nUsers: `{len(self.client.users)}`\nChannels: `{channels}`",
+                inline=False,
+            )
             if guild.icon is not None:
                 embed.set_thumbnail(url=guild.icon.url)
-
             embed.timestamp = discord.utils.utcnow()
-            await idk.send(view = embed_to_view(embed))
-        except Exception as e:
-            logging.error(f"Error in on_guild_remove: {e}")
-
-#client.add_cog(Guild(client))
-
-
+            await idk.send(view=embed_to_view(embed))
+        except Exception:
+            log.exception("Error in on_guild_remove for guild %s", guild.id)

@@ -7,9 +7,9 @@ from discord.ext import commands
 from core import *
 from utils.Tools import *
 from typing import Optional
-import aiosqlite
 from utils.cv2_compat import embed_to_view, embeds_to_view
 
+from utils.database import connect
 class Ignore(commands.Cog):
   def __init__(self, bot):
     self.bot = bot
@@ -18,7 +18,7 @@ class Ignore(commands.Cog):
     asyncio.create_task(self.initialize_db())
 
   async def initialize_db(self):
-    async with aiosqlite.connect(self.db_path) as db:
+    async with connect(self.db_path) as db:
       await db.execute("CREATE TABLE IF NOT EXISTS ignored_commands (guild_id INTEGER, command_name TEXT)")
       await db.execute("CREATE TABLE IF NOT EXISTS ignored_channels (guild_id INTEGER, channel_id INTEGER)")
       await db.execute("CREATE TABLE IF NOT EXISTS ignored_users (guild_id INTEGER, user_id INTEGER)")
@@ -59,7 +59,7 @@ class Ignore(commands.Cog):
           embed = discord.Embed(title=f"{emojis.CROSSICON} Error", description=f"`{command_name}` is not a valid command.", color=self.color)
           await ctx.reply(view = embed_to_view(embed), mention_author=False)
           return
-      async with aiosqlite.connect(self.db_path) as db:
+      async with connect(self.db_path) as db:
           cursor = await db.execute("SELECT COUNT(*) FROM ignored_commands WHERE guild_id = ?", (ctx.guild.id,))
           count = await cursor.fetchone()
           if count[0] >= 25:
@@ -82,7 +82,7 @@ class Ignore(commands.Cog):
   @blacklist_check()
   async def command_remove(self, ctx: commands.Context, command_name: str):
       command_name_normalized = command_name.strip().lower()
-      async with aiosqlite.connect(self.db_path) as db:
+      async with connect(self.db_path) as db:
           cursor = await db.execute("SELECT command_name FROM ignored_commands WHERE guild_id = ? AND command_name = ?", (ctx.guild.id, command_name_normalized))
           result = await cursor.fetchone()
           if not result:
@@ -99,7 +99,7 @@ class Ignore(commands.Cog):
   @ignore_check()
   @commands.has_permissions(administrator=True)
   async def command_show(self, ctx: commands.Context):
-      async with aiosqlite.connect(self.db_path) as db:
+      async with connect(self.db_path) as db:
           cursor = await db.execute("SELECT command_name FROM ignored_commands WHERE guild_id = ?", (ctx.guild.id,))
           commands = await cursor.fetchall()
           if not commands:
@@ -128,7 +128,7 @@ class Ignore(commands.Cog):
   #@ignore_check()
   @commands.has_permissions(administrator=True)
   async def channel_add(self, ctx: commands.Context, channel: discord.TextChannel):
-    async with aiosqlite.connect(self.db_path) as db:
+    async with connect(self.db_path) as db:
       cursor = await db.execute("SELECT COUNT(*) FROM ignored_channels WHERE guild_id = ?", (ctx.guild.id,))
       count = await cursor.fetchone()
 
@@ -154,7 +154,7 @@ class Ignore(commands.Cog):
   #@ignore_check()
   @commands.has_permissions(administrator=True)
   async def channel_remove(self, ctx: commands.Context, channel: discord.TextChannel):
-    async with aiosqlite.connect(self.db_path) as db:
+    async with connect(self.db_path) as db:
       cursor = await db.execute("SELECT channel_id FROM ignored_channels WHERE guild_id = ? AND channel_id = ?", (ctx.guild.id, channel.id))
       result = await cursor.fetchone()
 
@@ -172,7 +172,7 @@ class Ignore(commands.Cog):
   @ignore_check()
   @commands.has_permissions(administrator=True)
   async def channel_show(self, ctx: commands.Context):
-    async with aiosqlite.connect(self.db_path) as db:
+    async with connect(self.db_path) as db:
       cursor = await db.execute("SELECT channel_id FROM ignored_channels WHERE guild_id = ?", (ctx.guild.id,))
       channels = await cursor.fetchall()
 
@@ -202,7 +202,7 @@ class Ignore(commands.Cog):
   @blacklist_check()
 
   async def user_add(self, ctx: commands.Context, user: discord.User):
-    async with aiosqlite.connect(self.db_path) as db:
+    async with connect(self.db_path) as db:
       cursor = await db.execute("SELECT COUNT(*) FROM ignored_users WHERE guild_id = ?", (ctx.guild.id,))
       count = await cursor.fetchone()
 
@@ -228,7 +228,7 @@ class Ignore(commands.Cog):
 
   @commands.has_permissions(administrator=True)
   async def user_remove(self, ctx: commands.Context, user: discord.User):
-    async with aiosqlite.connect(self.db_path) as db:
+    async with connect(self.db_path) as db:
       cursor = await db.execute("SELECT user_id FROM ignored_users WHERE guild_id = ? AND user_id = ?", (ctx.guild.id, user.id))
       result = await cursor.fetchone()
 
@@ -246,7 +246,7 @@ class Ignore(commands.Cog):
   @ignore_check()
   @commands.has_permissions(administrator=True)
   async def user_show(self, ctx: commands.Context):
-    async with aiosqlite.connect(self.db_path) as db:
+    async with connect(self.db_path) as db:
       cursor = await db.execute("SELECT user_id FROM ignored_users WHERE guild_id = ?", (ctx.guild.id,))
       users = await cursor.fetchall()
 
@@ -275,7 +275,7 @@ class Ignore(commands.Cog):
   
   @commands.has_permissions(administrator=True)
   async def bypass_add(self, ctx: commands.Context, user: discord.User):
-    async with aiosqlite.connect(self.db_path) as db:
+    async with connect(self.db_path) as db:
       cursor = await db.execute("SELECT COUNT(*) FROM bypassed_users WHERE guild_id = ?", (ctx.guild.id,))
       count = await cursor.fetchone()
 
@@ -301,7 +301,7 @@ class Ignore(commands.Cog):
   @ignore_check()
   @commands.has_permissions(administrator=True)
   async def bypass_remove(self, ctx: commands.Context, user: discord.User):
-    async with aiosqlite.connect(self.db_path) as db:
+    async with connect(self.db_path) as db:
       cursor = await db.execute("SELECT user_id FROM bypassed_users WHERE guild_id = ? AND user_id = ?", (ctx.guild.id, user.id))
       result = await cursor.fetchone()
 
@@ -319,7 +319,7 @@ class Ignore(commands.Cog):
   @ignore_check()
   @commands.has_permissions(administrator=True)
   async def bypass_show(self, ctx: commands.Context):
-    async with aiosqlite.connect(self.db_path) as db:
+    async with connect(self.db_path) as db:
       cursor = await db.execute("SELECT user_id FROM bypassed_users WHERE guild_id = ?", (ctx.guild.id,))
       users = await cursor.fetchall()
 

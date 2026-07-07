@@ -1,3 +1,4 @@
+from utils.database import connect
 from utils import emojis
 
 import discord
@@ -21,7 +22,7 @@ class AutoBlacklist(Cog):
 
     async def add_to_blacklist(self, user_id=None, guild_id=None, channel=None):
         try:
-            async with aiosqlite.connect(self.db_path) as db:
+            async with connect(self.db_path) as db:
                 timestamp = datetime.utcnow()
                 if guild_id:
                     await db.execute('''
@@ -46,7 +47,7 @@ class AutoBlacklist(Cog):
             print(f"Database error: {e}")
 
     async def check_and_blacklist_guild(self, guild_id):
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             async with db.execute(
                 '''
                 SELECT COUNT(DISTINCT user_id) FROM user_blacklist 
@@ -102,7 +103,7 @@ class AutoBlacklist(Cog):
         retry = bucket.update_rate_limit()
 
         if retry:
-            async with aiosqlite.connect(self.db_path) as db:
+            async with connect(self.db_path) as db:
                 async with db.execute('SELECT user_id FROM user_blacklist WHERE user_id = ?', (message.author.id,)) as cursor:
                     if await cursor.fetchone():
                         return
@@ -135,7 +136,7 @@ class AutoBlacklist(Cog):
         retry = bucket.update_rate_limit()
 
         if retry:
-            async with aiosqlite.connect(self.db_path) as db:
+            async with connect(self.db_path) as db:
                 async with db.execute('SELECT user_id FROM user_blacklist WHERE user_id = ?', (ctx.author.id,)) as cursor:
                     if await cursor.fetchone():
                         return

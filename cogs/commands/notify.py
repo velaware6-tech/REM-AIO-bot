@@ -1,9 +1,9 @@
+from utils.database import connect
 from utils import emojis
 
 import asyncio
 import discord
 from discord.ext import commands
-import aiosqlite
 from utils.Tools import *
 from utils.cv2_compat import embed_to_view, embeds_to_view
 
@@ -14,7 +14,7 @@ class NotifCommands(commands.Cog):
         self.loop_task = asyncio.create_task(self.setup_db())
 
     async def setup_db(self):
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             await db.execute('''CREATE TABLE IF NOT EXISTS notifications (
                                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                                 type TEXT NOT NULL UNIQUE,
@@ -33,7 +33,7 @@ class NotifCommands(commands.Cog):
     @ignore_check()
     @commands.has_permissions(administrator=True)
     async def twitch(self, ctx, role: discord.Role, channel: discord.TextChannel):
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             async with db.execute('SELECT * FROM notifications WHERE type = ?', ('twitch',)) as existing:
                 row = await existing.fetchone()
                 if row:
@@ -49,7 +49,7 @@ class NotifCommands(commands.Cog):
     @ignore_check()
     @commands.has_permissions(administrator=True)
     async def youtube(self, ctx, role: discord.Role, channel: discord.TextChannel):
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             async with db.execute('SELECT * FROM notifications WHERE type = ?', ('youtube',)) as existing:
                 row = await existing.fetchone()
                 if row:
@@ -62,7 +62,7 @@ class NotifCommands(commands.Cog):
 
     @setnotif.command()
     async def list(self, ctx):
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             async with db.execute('SELECT * FROM notifications') as cursor:
                 rows = await cursor.fetchall()
                 if not rows:
@@ -83,7 +83,7 @@ class NotifCommands(commands.Cog):
 
     @setnotif.command()
     async def reset(self, ctx):
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             await db.execute('DELETE FROM notifications WHERE type IN (?, ?)', ('twitch', 'youtube'))
             await db.commit()
             await ctx.send(view = embed_to_view(discord.Embed(title=f"{emojis.TICK} Success", description="Twitch and YouTube notifications have been reset.", color=0x00FF00)))
@@ -97,7 +97,7 @@ class NotifCommands(commands.Cog):
         if streaming:
             stream_type = "twitch" if "twitch" in streaming.url.lower() else "youtube" if "youtube" in streaming.url.lower() else None
             if stream_type:
-                async with aiosqlite.connect(self.db_path) as db:
+                async with connect(self.db_path) as db:
                     async with db.execute('SELECT role_id, channel_id FROM notifications WHERE type = ?', (stream_type,)) as cursor:
                         row = await cursor.fetchone()
                         if row:

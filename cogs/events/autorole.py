@@ -1,6 +1,6 @@
+from utils.database import connect
 import discord
 import aiohttp
-import aiosqlite
 import asyncio
 import logging
 from discord.ext import commands
@@ -15,7 +15,7 @@ class Autorole2(Cog):
         self.headers = {"Authorization": f"Bot {self.bot.http.token}"}
 
     async def get_autorole(self, guild_id: int):
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with connect(DATABASE_PATH) as db:
             async with db.execute("SELECT bots, humans FROM autorole WHERE guild_id = ?", (guild_id,)) as cursor:
                 row = await cursor.fetchone()
                 if row:

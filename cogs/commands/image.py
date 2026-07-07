@@ -1,23 +1,32 @@
+import random
+
+import aiohttp
 import discord
 from discord.ext import commands
-import aiohttp
-import os
-from utils.cv2_compat import embed_to_view, embeds_to_view
 
-PEXELS_API_KEY = "js24mfV1bCCvgV6KfnEFvo5UnCHnATFarFnAdDrpDbczl7f0yXpjDF8x"
+from utils.config import PEXELS_API_KEY
+from utils.cv2_compat import embed_to_view
+
 
 class ImageCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     async def fetch_pexels_image(self, query):
+        if not PEXELS_API_KEY:
+            return None
         headers = {
             "Authorization": PEXELS_API_KEY
         }
         async with aiohttp.ClientSession() as session:
-            async with session.get(f"https://api.pexels.com/v1/search?query={query}&per_page=50", headers=headers) as resp:
+            async with session.get(
+                f"https://api.pexels.com/v1/search?query={query}&per_page=50",
+                headers=headers,
+            ) as resp:
+                if resp.status != 200:
+                    return None
                 data = await resp.json()
-                if data["photos"]:
+                if data.get("photos"):
                     image = random.choice(data["photos"])
                     return image["src"]["original"]
                 return None
@@ -30,32 +39,39 @@ class ImageCommands(commands.Cog):
 
     @commands.command(name="boy")
     async def boy_image(self, ctx):
+        if not PEXELS_API_KEY:
+            return await ctx.send("Image search is not configured. Set `PEXELS_API_KEY` in `.env`.")
         url = await self.fetch_pexels_image("handsome boy")
         if url:
-            await ctx.send(view = embed_to_view(discord.Embed(title="👦 Boy Pic").set_image(url=url)))
+            await ctx.send(view=embed_to_view(discord.Embed(title="👦 Boy Pic").set_image(url=url)))
         else:
             await ctx.send("No boy image found.")
 
     @commands.command(name="girl")
     async def girl_image(self, ctx):
+        if not PEXELS_API_KEY:
+            return await ctx.send("Image search is not configured. Set `PEXELS_API_KEY` in `.env`.")
         url = await self.fetch_pexels_image("beautiful girl")
         if url:
-            await ctx.send(view = embed_to_view(discord.Embed(title="👧 Girl Pic").set_image(url=url)))
+            await ctx.send(view=embed_to_view(discord.Embed(title="👧 Girl Pic").set_image(url=url)))
         else:
             await ctx.send("No girl image found.")
 
     @commands.command(name="couple")
     async def couple_image(self, ctx):
+        if not PEXELS_API_KEY:
+            return await ctx.send("Image search is not configured. Set `PEXELS_API_KEY` in `.env`.")
         url = await self.fetch_pexels_image("romantic couple")
         if url:
-            await ctx.send(view = embed_to_view(discord.Embed(title="💑 Couple Pic").set_image(url=url)))
+            await ctx.send(view=embed_to_view(discord.Embed(title="💑 Couple Pic").set_image(url=url)))
         else:
             await ctx.send("No couple image found.")
 
     @commands.command(name="anime")
     async def anime_image(self, ctx):
         url = await self.fetch_waifu_image("waifu")
-        await ctx.send(view = embed_to_view(discord.Embed(title="🧚 Anime Waifu").set_image(url=url)))
+        await ctx.send(view=embed_to_view(discord.Embed(title="🧚 Anime Waifu").set_image(url=url)))
+
 
 async def setup(bot):
     await bot.add_cog(ImageCommands(bot))

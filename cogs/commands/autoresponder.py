@@ -1,10 +1,10 @@
+from utils.database import connect
 from utils import emojis
 from utils.components_v2 import success_panel, error_panel, info_panel
 
 import asyncio
 import discord
 from discord.ext import commands
-import aiosqlite
 import os
 from utils.Tools import *
 
@@ -19,7 +19,7 @@ class AutoResponder(commands.Cog):
     async def initialize_db(self):
         if not os.path.exists(os.path.dirname(DB_PATH)):
             os.makedirs(os.path.dirname(DB_PATH))
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             await db.execute('''
                 CREATE TABLE IF NOT EXISTS autoresponses (
                     guild_id INTEGER,
@@ -46,7 +46,7 @@ class AutoResponder(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def _create(self, ctx, name, *, message):
         name_lower = name.lower()
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             async with db.execute("SELECT COUNT(*) FROM autoresponses WHERE guild_id = ?", (ctx.guild.id,)) as cursor:
                 count = (await cursor.fetchone())[0]
                 if count >= 20:
@@ -76,7 +76,7 @@ class AutoResponder(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def _delete(self, ctx, name):
         name_lower = name.lower()
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             async with db.execute("SELECT 1 FROM autoresponses WHERE guild_id = ? AND LOWER(name) = ?", (ctx.guild.id, name_lower)) as cursor:
                 if not await cursor.fetchone():
                     return await ctx.reply(view=error_panel(
@@ -98,7 +98,7 @@ class AutoResponder(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def _edit(self, ctx, name, *, message):
         name_lower = name.lower()
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             async with db.execute("SELECT 1 FROM autoresponses WHERE guild_id = ? AND LOWER(name) = ?", (ctx.guild.id, name_lower)) as cursor:
                 if not await cursor.fetchone():
                     return await ctx.reply(view=error_panel(
@@ -119,7 +119,7 @@ class AutoResponder(commands.Cog):
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.has_permissions(administrator=True)
     async def _config(self, ctx):
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             async with db.execute("SELECT name FROM autoresponses WHERE guild_id = ?", (ctx.guild.id,)) as cursor:
                 autoresponses = await cursor.fetchall()
 
@@ -140,7 +140,7 @@ class AutoResponder(commands.Cog):
         if message.author == self.bot.user:
             return
 
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             async with db.execute("SELECT message FROM autoresponses WHERE guild_id = ? AND LOWER(name) = ?", (message.guild.id, message.content.lower())) as cursor:
                 row = await cursor.fetchone()
 

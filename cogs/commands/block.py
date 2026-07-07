@@ -1,9 +1,9 @@
+from utils.database import connect
 from utils import emojis
 
 import asyncio
 import discord
 from discord.ext import commands
-import aiosqlite
 from utils import Paginator, DescriptionEmbedPaginator
 from utils.cv2_compat import embed_to_view, embeds_to_view
 
@@ -14,7 +14,7 @@ class Block(commands.Cog):
 
   #@commands.Cog.listener()
   async def set_db(self):
-    async with aiosqlite.connect('db/block.db') as db:
+    async with connect('block.db') as db:
         await db.execute('''
             CREATE TABLE IF NOT EXISTS user_blacklist (
                 user_id INTEGER PRIMARY KEY,
@@ -48,7 +48,7 @@ class Block(commands.Cog):
   @user.command(name="add", help="Adds a user to the blacklist.")
   @commands.is_owner()
   async def add_user(self, ctx, user: discord.User):
-    async with aiosqlite.connect('db/block.db') as db:
+    async with connect('block.db') as db:
       cursor = await db.execute('SELECT user_id FROM user_blacklist WHERE user_id = ?', (user.id,))
       if await cursor.fetchone():
         embed = discord.Embed(
@@ -70,7 +70,7 @@ class Block(commands.Cog):
   @user.command(name="remove", help="Remove a user from the blacklist.")
   @commands.is_owner()
   async def remove_user(self, ctx, user: discord.User):
-    async with aiosqlite.connect('db/block.db') as db:
+    async with connect('block.db') as db:
       cursor = await db.execute('SELECT user_id FROM user_blacklist WHERE user_id = ?', (user.id,))
       if not await cursor.fetchone():
         embed = discord.Embed(
@@ -92,7 +92,7 @@ class Block(commands.Cog):
   @user.command(name="show", aliases=["list"], help="Shows all Blacklisted users.")
   @commands.is_owner()
   async def show_users(self, ctx):
-    async with aiosqlite.connect('db/block.db') as db:
+    async with connect('block.db') as db:
       cursor = await db.execute('SELECT user_id FROM user_blacklist')
       rows = await cursor.fetchall()
       if not rows:
@@ -137,7 +137,7 @@ class Block(commands.Cog):
   @guild.command(name="add", help="Adds a guild to the blacklist.")
   @commands.is_owner()
   async def add_guild(self, ctx, guild_id: int):
-    async with aiosqlite.connect('db/block.db') as db:
+    async with connect('block.db') as db:
       cursor = await db.execute('SELECT guild_id FROM guild_blacklist WHERE guild_id = ?', (guild_id,))
       if await cursor.fetchone():
         embed = discord.Embed(
@@ -159,7 +159,7 @@ class Block(commands.Cog):
   @guild.command(name="remove", help="Remove a guild from the blacklist.")
   @commands.is_owner()
   async def remove_guild(self, ctx, guild_id: int):
-    async with aiosqlite.connect('db/block.db') as db:
+    async with connect('block.db') as db:
       cursor = await db.execute('SELECT guild_id FROM guild_blacklist WHERE guild_id = ?', (guild_id,))
       if not await cursor.fetchone():
         embed = discord.Embed(
@@ -182,7 +182,7 @@ class Block(commands.Cog):
   @guild.command(name="show", aliases=["list"], help="Shows the list of blacklisted guilds")
   @commands.is_owner()
   async def show_guilds(self, ctx):
-    async with aiosqlite.connect('db/block.db') as db:
+    async with connect('block.db') as db:
       cursor = await db.execute('SELECT guild_id FROM guild_blacklist')
       rows = await cursor.fetchall()
       if not rows:

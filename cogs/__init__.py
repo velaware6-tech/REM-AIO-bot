@@ -185,6 +185,8 @@ async def setup(bot: axon):
 
         await bot.add_cog(cog)
         loaded_names.add(name)
-        print(Fore.BLUE + Style.BRIGHT + f"Loaded cog: {name}")
+        log.info("Loaded cog: %s", name)
+        print(Fore.BLUE + Style.BRIGHT + f"Loaded cog: {name}", flush=True)
 
-    print(Fore.BLUE + Style.BRIGHT + "All REM cogs loaded successfully.")
+    log.info("All REM cogs loaded successfully")
+    print(Fore.BLUE + Style.BRIGHT + "All REM cogs loaded successfully.", flush=True)

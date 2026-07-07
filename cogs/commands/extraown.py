@@ -1,10 +1,10 @@
+from utils.database import open_connection
 from utils import emojis
 
 import asyncio
 import discord
 from discord.ext import commands
 from discord.ui import View, Button
-import aiosqlite
 from utils.Tools import *
 from utils.config import BYPASS_IDS
 from utils.cv2_compat import embed_to_view, embeds_to_view
@@ -15,7 +15,7 @@ class Extraowner(commands.Cog):
         asyncio.create_task(self.initialize_db())
 
     async def initialize_db(self):
-        self.db = await aiosqlite.connect('db/anti.db')
+        self.db = await open_connection('anti.db')
         await self.db.execute('''
             CREATE TABLE IF NOT EXISTS extraowners (
                 guild_id INTEGER PRIMARY KEY,

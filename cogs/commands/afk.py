@@ -1,10 +1,10 @@
+from utils.database import connect
 from utils import emojis
 from utils.components_v2 import success_panel, error_panel
 
 import asyncio
 import discord
 from discord.ext import commands
-import aiosqlite
 import os
 import time
 from typing import Optional
@@ -56,7 +56,7 @@ class afk(commands.Cog):
 
     async def initialize_db(self):
         os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             await db.execute("""
                 CREATE TABLE IF NOT EXISTS afk (
                     user_id INTEGER PRIMARY KEY,
@@ -80,7 +80,7 @@ class afk(commands.Cog):
         ctx.command.reset_cooldown(ctx)
 
     async def update_data(self, user, guild_id):
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             await db.execute("INSERT OR IGNORE INTO afk (user_id, AFK, reason, time, mentions, dm) VALUES (?, 'False', 'None', 0, 0, 'False')", (user.id,))
             await db.execute("INSERT OR IGNORE INTO afk_guild (user_id, guild_id) VALUES (?, ?)", (user.id, guild_id))
             await db.commit()
@@ -101,7 +101,7 @@ class afk(commands.Cog):
             if message.author.bot or message.guild is None:
                 return
 
-            async with aiosqlite.connect(DB_PATH) as db:
+            async with connect(DB_PATH) as db:
                 cursor = await db.execute("SELECT AFK, time, mentions, reason FROM afk WHERE user_id = ?", (message.author.id,))
                 afk_data = await cursor.fetchone()
                 await cursor.close()
@@ -127,7 +127,7 @@ class afk(commands.Cog):
                             print(f"(AFK module) Missing permissions to send messages in channel: {message.channel.id}")
 
             if message.mentions:
-                async with aiosqlite.connect(DB_PATH) as db:
+                async with connect(DB_PATH) as db:
                     for user_mention in message.mentions:
                         cursor = await db.execute("SELECT AFK, reason, time, mentions, dm FROM afk WHERE user_id = ?", (user_mention.id,))
                         afk_data = await cursor.fetchone()
@@ -183,7 +183,7 @@ class afk(commands.Cog):
         test = await ctx.reply(content="Should I DM you on mentions?", view=view, mention_author=False)
         await view.wait()
 
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             if not view.value:
                 return await test.edit(content="Timed Out, please try again.", view=None)
             dm_status = 'True' if view.value == 'Yes' else 'False'

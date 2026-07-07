@@ -1,8 +1,8 @@
+from utils.database import connect
 from utils import getConfig  
 import discord
 from discord.ext import commands
 from utils.Tools import get_ignore_data
-import aiosqlite
 from utils.cv2_compat import embed_to_view, embeds_to_view
 
 class Mention(commands.Cog):
@@ -13,7 +13,7 @@ class Mention(commands.Cog):
         self.bot_name = "REM ALL IN ONE BOT"
 
     async def is_blacklisted(self, message):
-        async with aiosqlite.connect("db/block.db") as db:
+        async with connect('block.db') as db:
             cursor = await db.execute("SELECT 1 FROM guild_blacklist WHERE guild_id = ?", (message.guild.id,))
             if await cursor.fetchone():
                 return True

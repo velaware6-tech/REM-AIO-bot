@@ -1,6 +1,6 @@
+from utils.database import connect
 import discord
 from discord.ext import commands
-import aiosqlite
 import asyncio
 import random
 import datetime
@@ -29,7 +29,7 @@ class AntiEmojiCreate(commands.Cog):
   @commands.Cog.listener()
   async def on_guild_emojis_update(self, guild, before, after):
     if len(after) > len(before):
-      async with aiosqlite.connect('db/anti.db') as db:
+      async with connect('anti.db') as db:
         async with db.execute("SELECT status FROM antinuke WHERE guild_id = ?", (guild.id,)) as cursor:
           antinuke_status = await cursor.fetchone()
 

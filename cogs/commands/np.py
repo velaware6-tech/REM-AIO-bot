@@ -1,10 +1,10 @@
+from utils.database import connect
 from utils import emojis
 
 import asyncio
 from discord.ext import commands, tasks
 from discord import *
 import discord
-import aiosqlite
 from typing import Optional
 from datetime import datetime, timedelta
 from discord.ui import View, Button, Select
@@ -72,7 +72,7 @@ class TimeSelect(Select):
         else:
             expiry_str = None
 
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             await db.execute("INSERT INTO np (id, expiry_time) VALUES (?, ?)", (self.user.id, expiry_str))
             await db.commit()
 
@@ -127,7 +127,7 @@ class NoPrefix(commands.Cog):
         self.expiry_check.start()
 
     async def setup_database(self):
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             
             await db.execute('''
                 CREATE TABLE IF NOT EXISTS np (
@@ -166,13 +166,13 @@ class NoPrefix(commands.Cog):
             await self.client.wait_until_ready()
         except RuntimeError:
             pass
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             async with db.execute('SELECT id FROM staff') as cursor:
                 self.staff = {row[0] for row in await cursor.fetchall()}
 
     @tasks.loop(minutes=10)
     async def expiry_check(self):
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             now = datetime.utcnow().isoformat()
             async with db.execute("SELECT id FROM np WHERE expiry_time IS NOT NULL AND expiry_time <= ?", (now,)) as cursor:
                 expired_users = [row[0] for row in await cursor.fetchall()]
@@ -246,7 +246,7 @@ class NoPrefix(commands.Cog):
     @_np.command(name="list", help="List of no-prefix users")
     @commands.check(is_owner_or_staff)
     async def np_list(self, ctx):
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             async with db.execute("SELECT id FROM np") as cursor:
                 ids = [row[0] for row in await cursor.fetchall()]
                 if not ids:
@@ -270,7 +270,7 @@ class NoPrefix(commands.Cog):
     @_np.command(name="add", help="Add user to no-prefix with time options")
     @commands.check(is_owner_or_staff)
     async def np_add(self, ctx, user: discord.User):
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             async with db.execute("SELECT id FROM np WHERE id = ?", (user.id,)) as cursor:
                 result = await cursor.fetchone()
             if result:
@@ -287,7 +287,7 @@ class NoPrefix(commands.Cog):
     @_np.command(name="remove", help="Remove user from no-prefix")
     @commands.check(is_owner_or_staff)
     async def np_remove(self, ctx, user: discord.User):
-        async with aiosqlite.connect('db/np.db') as db:
+        async with connect('np.db') as db:
             async with db.execute("SELECT id FROM np WHERE id = ?", (user.id,)) as cursor:
                 result = await cursor.fetchone()
             if not result:
@@ -345,7 +345,7 @@ class NoPrefix(commands.Cog):
     @_np.command(name="status", help="Check if a user is in the No Prefix list and show details.")
     @commands.check(is_owner_or_staff)
     async def np_status(self, ctx, user: discord.User):
-        async with aiosqlite.connect('db/np.db') as db:
+        async with connect('np.db') as db:
             async with db.execute("SELECT id, expiry_time FROM np WHERE id = ?", (user.id,)) as cursor:
                 result = await cursor.fetchone()
 
@@ -397,7 +397,7 @@ class NoPrefix(commands.Cog):
 
     @autonp_guild.command(name="add", help="Add a guild to auto no-prefix.")
     async def add_guild(self, ctx, guild_id: int):
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             async with db.execute("SELECT 1 FROM autonp WHERE guild_id = ?", (guild_id,)) as cursor:
                 if await cursor.fetchone():
                     await ctx.reply("Guild is already added.")
@@ -408,7 +408,7 @@ class NoPrefix(commands.Cog):
 
     @autonp_guild.command(name="remove", help="Remove a guild from auto no-prefix.")
     async def remove_guild(self, ctx, guild_id: int):
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             async with db.execute("SELECT 1 FROM autonp WHERE guild_id = ?", (guild_id,)) as cursor:
                 if not await cursor.fetchone():
                     await ctx.reply("Guild is not in auto no-prefix.")
@@ -420,7 +420,7 @@ class NoPrefix(commands.Cog):
     @autonp_guild.command(name="list", help="List all guilds with auto no-prefix.")
     @commands.check(is_owner_or_staff)
     async def list_guilds(self, ctx):
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             async with db.execute("SELECT guild_id FROM autonp") as cursor:
                 guilds = [row[0] for row in await cursor.fetchall()]
                 if not guilds:
@@ -430,7 +430,7 @@ class NoPrefix(commands.Cog):
 
 
     async def is_user_in_np(self, user_id):
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             async with db.execute("SELECT 1 FROM np WHERE id = ?", (user_id,)) as cursor:
                 return await cursor.fetchone() is not None
             
@@ -440,7 +440,7 @@ class NoPrefix(commands.Cog):
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
         if before.premium_since is None and after.premium_since is not None:
-            async with aiosqlite.connect(self.db_path) as db:
+            async with connect(self.db_path) as db:
                 async with db.execute("SELECT 1 FROM autonp WHERE guild_id = ?", (after.guild.id,)) as cursor:
                     if not await cursor.fetchone():
                         return
@@ -463,7 +463,7 @@ class NoPrefix(commands.Cog):
         #await self.handle_boost_removal(member)
 
     async def handle_boost_removal(self, user):
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             async with db.execute("SELECT 1 FROM autonp WHERE guild_id = ?", (user.guild.id,)) as cursor:
                 if not await cursor.fetchone():
                     return
@@ -481,7 +481,7 @@ class NoPrefix(commands.Cog):
 
     async def add_np(self, user, duration):
         expiry_time = datetime.utcnow() + duration
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             await db.execute("INSERT INTO np (id, expiry_time) VALUES (?, ?)", (user.id, expiry_time.isoformat()))
             await db.commit()
             
@@ -509,7 +509,7 @@ class NoPrefix(commands.Cog):
 
 
     async def remove_np(self, user):
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             async with db.execute("SELECT expiry_time FROM np WHERE id = ?", (user.id,)) as cursor:
                 row = await cursor.fetchone()
                 if row is None or row[0] is None:
@@ -563,7 +563,7 @@ class NoPrefix(commands.Cog):
                 return await interaction.response.send_message("This interaction is not for you.", ephemeral=True)
             
             # Remove all users from no-prefix list
-            async with aiosqlite.connect(self.db_path) as db:
+            async with connect(self.db_path) as db:
                 # Get count of users before deletion
                 async with db.execute("SELECT COUNT(*) FROM np") as cursor:
                     count = (await cursor.fetchone())[0]

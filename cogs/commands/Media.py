@@ -1,7 +1,7 @@
+from utils.database import connect
 from utils import emojis
 
 import discord
-import aiosqlite
 from discord.ext import commands
 from utils.Tools import blacklist_check, ignore_check
 from collections import defaultdict
@@ -15,7 +15,7 @@ class Media(commands.Cog):
         
 
     async def set_db(self):
-        async with aiosqlite.connect('db/media.db') as db:
+        async with connect('media.db') as db:
             await db.execute('''
                 CREATE TABLE IF NOT EXISTS media_channels (
                     guild_id INTEGER PRIMARY KEY,
@@ -50,7 +50,7 @@ class Media(commands.Cog):
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.has_permissions(administrator=True)
     async def setup(self, ctx, *, channel: discord.TextChannel):
-        async with aiosqlite.connect('db/media.db') as db:
+        async with connect('media.db') as db:
             async with db.execute('SELECT channel_id FROM media_channels WHERE guild_id = ?', (ctx.guild.id,)) as cursor:
                 result = await cursor.fetchone()
                 if result:
@@ -79,7 +79,7 @@ class Media(commands.Cog):
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.has_permissions(administrator=True)
     async def remove(self, ctx):
-        async with aiosqlite.connect('db/media.db') as db:
+        async with connect('media.db') as db:
             async with db.execute('SELECT channel_id FROM media_channels WHERE guild_id = ?', (ctx.guild.id,)) as cursor:
                 result = await cursor.fetchone()
                 if not result:
@@ -107,7 +107,7 @@ class Media(commands.Cog):
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.has_permissions(administrator=True)
     async def config(self, ctx):
-        async with aiosqlite.connect('db/media.db') as db:
+        async with connect('media.db') as db:
             async with db.execute('SELECT channel_id FROM media_channels WHERE guild_id = ?', (ctx.guild.id,)) as cursor:
                 result = await cursor.fetchone()
                 if not result:
@@ -143,7 +143,7 @@ class Media(commands.Cog):
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.has_permissions(administrator=True)
     async def bypass_add(self, ctx, user: discord.Member):
-        async with aiosqlite.connect('db/media.db') as db:
+        async with connect('media.db') as db:
             async with db.execute('SELECT COUNT(*) FROM media_bypass WHERE guild_id = ?', (ctx.guild.id,)) as cursor:
                 count = await cursor.fetchone()
                 if count[0] >= 25:
@@ -182,7 +182,7 @@ class Media(commands.Cog):
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.has_permissions(administrator=True)
     async def bypass_remove(self, ctx, user: discord.Member):
-        async with aiosqlite.connect('db/media.db') as db:
+        async with connect('media.db') as db:
             async with db.execute('SELECT 1 FROM media_bypass WHERE guild_id = ? AND user_id = ?', (ctx.guild.id, user.id)) as cursor:
                 result = await cursor.fetchone()
                 if not result:
@@ -210,7 +210,7 @@ class Media(commands.Cog):
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.has_permissions(administrator=True)
     async def bypass_show(self, ctx):
-        async with aiosqlite.connect('db/media.db') as db:
+        async with connect('media.db') as db:
             async with db.execute('SELECT user_id FROM media_bypass WHERE guild_id = ?', (ctx.guild.id,)) as cursor:
                 result = await cursor.fetchall()
                 if not result:
@@ -237,16 +237,16 @@ class Media(commands.Cog):
         if message.author.bot:
             return
 
-        async with aiosqlite.connect('db/media.db') as db:
+        async with connect('media.db') as db:
             async with db.execute('SELECT channel_id FROM media_channels WHERE guild_id = ?', (message.guild.id,)) as cursor:
                 media_channel = await cursor.fetchone()
 
         if media_channel and message.channel.id == media_channel[0]:
-            async with aiosqlite.connect('db/block.db') as block_db:
+            async with connect('block.db') as block_db:
                 async with block_db.execute('SELECT 1 FROM user_blacklist WHERE user_id = ?', (message.author.id,)) as cursor:
                     blacklisted = await cursor.fetchone()
 
-            async with aiosqlite.connect('db/media.db') as db:
+            async with connect('media.db') as db:
                 async with db.execute('SELECT 1 FROM media_bypass WHERE guild_id = ? AND user_id = ?', (message.guild.id, message.author.id)) as cursor:
                     bypassed = await cursor.fetchone()
 
@@ -276,7 +276,7 @@ class Media(commands.Cog):
                 ]
 
                 if len(self.infractions[message.author.id]) >= 5:  
-                    async with aiosqlite.connect('db/block.db') as block_db:
+                    async with connect('block.db') as block_db:
                         await block_db.execute('INSERT OR IGNORE INTO user_blacklist (user_id) VALUES (?)', (message.author.id,))
                         
                         await block_db.commit()

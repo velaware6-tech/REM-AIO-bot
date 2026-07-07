@@ -1,0 +1,280 @@
+---
+pid: 12908
+cwd: "C:\Users\devbh\OneDrive\Desktop\REM AIO"
+command: "Set-Location \"C:\\Users\\devbh\\OneDrive\\Desktop\\REM AIO\"; python rem.py"
+started_at: 2026-07-07T02:41:22.902Z
+running_for_ms: 139997   
+---
+ * Serving Flask app 'rem'
+ * Debug mode: off
+2026-07-07 08:11:24,636 | INFO     | werkzeug | WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8080
+ * Running on http://192.168.31.96:8080
+2026-07-07 08:11:24,636 | INFO     | werkzeug | Press CTRL+C to quit
+2026-07-07 08:11:25,477 | INFO     | discord.client | logging in using static token
+2026-07-07 08:11:27,529 | INFO     | utils.migrations | Startup database migrations completed.
+Loaded cog: help2026-07-07 08:11:33,026 | INFO     | cogs | Loaded cog: help
+
+Loaded cog: General
+Loaded cog: Music
+2026-07-07 08:11:33,028 | INFO     | cogs | Loaded cog: General
+2026-07-07 08:11:33,031 | INFO     | cogs | Loaded cog: Music
+Loaded cog: Automod
+Loaded cog: Welcomer
+Loaded cog: Fun
+Loaded cog: Games
+Loaded cog: Extra
+Loaded cog: Voice
+Loaded cog: Owner
+Loaded cog: Customrole
+Loaded cog: afk
+Loaded cog: Embed
+Loaded cog: Media
+Loaded cog: Ignore
+Loaded cog: Invcrole
+Loaded cog: Giveaway
+Loaded cog: Steal
+2026-07-07 08:11:33,036 | INFO     | cogs | Loaded cog: Automod
+2026-07-07 08:11:33,041 | INFO     | cogs | Loaded cog: Welcomer
+2026-07-07 08:11:33,043 | INFO     | cogs | Loaded cog: Fun
+2026-07-07 08:11:33,046 | INFO     | cogs | Loaded cog: Games
+2026-07-07 08:11:33,051 | INFO     | cogs | Loaded cog: Extra
+2026-07-07 08:11:33,055 | INFO     | cogs | Loaded cog: Voice
+2026-07-07 08:11:33,060 | INFO     | cogs | Loaded cog: Owner
+2026-07-07 08:11:33,065 | INFO     | cogs | Loaded cog: Customrole
+2026-07-07 08:11:33,066 | INFO     | cogs | Loaded cog: afk
+2026-07-07 08:11:33,066 | INFO     | cogs | Loaded cog: Embed
+2026-07-07 08:11:33,069 | INFO     | cogs | Loaded cog: Media
+2026-07-07 08:11:33,076 | INFO     | cogs | Loaded cog: Ignore
+2026-07-07 08:11:33,076 | INFO     | cogs | Loaded cog: Invcrole
+2026-07-07 08:11:33,117 | INFO     | cogs | Loaded cog: Giveaway
+2026-07-07 08:11:33,117 | INFO     | cogs | Loaded cog: Steal
+2026-07-07 08:11:33,161 | INFO     | cogs | Loaded cog: EmojiSync
+2026-07-07 08:11:33,162 | INFO     | cogs | Loaded cog: Ship
+2026-07-07 08:11:33,163 | INFO     | cogs | Loaded cog: Timer
+2026-07-07 08:11:33,165 | INFO     | cogs | Loaded cog: Blacklist
+2026-07-07 08:11:33,167 | INFO     | cogs | Loaded cog: Block
+2026-07-07 08:11:33,168 | INFO     | cogs | Loaded cog: Nightmode
+2026-07-07 08:11:33,169 | INFO     | cogs | Loaded cog: Badges
+2026-07-07 08:11:33,169 | INFO     | cogs | Loaded cog: Antinuke
+2026-07-07 08:11:33,170 | INFO     | cogs | Loaded cog: Whitelist
+2026-07-07 08:11:33,170 | INFO     | cogs | Loaded cog: Unwhitelist
+2026-07-07 08:11:33,171 | INFO     | cogs | Loaded cog: Extraowner
+2026-07-07 08:11:33,171 | INFO     | cogs | Loaded cog: Slots
+2026-07-07 08:11:33,171 | INFO     | cogs | Loaded cog: Blackjack
+2026-07-07 08:11:33,182 | ERROR    | asyncio | Task exception was never retrieved
+future: <Task finished name='Task-15' coro=<create_bypass_table() done, defined at C:\Users\devbh\OneDrive\Desktop\REM AIO\cogs\commands\blacklist.py:50> exception=OperationalError('database is locked')>
+Traceback (most recent call last):
+  File "C:\Users\devbh\OneDrive\Desktop\REM AIO\cogs\commands\blacklist.py", line 51, in create_bypass_table
+    async with connect(DB_PATH) as db:
+               ~~~~~~~^^^^^^^^^
+  File "C:\Python314\Lib\contextlib.py", line 214, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\devbh\OneDrive\Desktop\REM AIO\utils\database.py", line 33, in connect
+    await db.execute("PRAGMA journal_mode=WAL")
+  File "C:\Users\devbh\AppData\Roaming\Python\Python314\site-packages\aiosqlite\core.py", line 223, in execute
+    cursor = await self._execute(self._conn.execute, sql, parameters)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\devbh\AppData\Roaming\Python\Python314\site-packages\aiosqlite\core.py", line 160, in _execute
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Users\devbh\AppData\Roaming\Python\Python314\site-packages\aiosqlite\core.py", line 63, in _connection_worker_thread
+    result = function()
+sqlite3.OperationalError: database is locked
+2026-07-07 08:11:33,237 | INFO     | cogs | Loaded cog: Stats
+Loaded cog: EmojiSync
+Loaded cog: Ship
+Loaded cog: Timer
+Loaded cog: Blacklist
+Loaded cog: Block
+Loaded cog: Nightmode
+Loaded cog: Badges
+Loaded cog: Antinuke
+Loaded cog: Whitelist
+Loaded cog: Unwhitelist
+Loaded cog: Extraowner
+Loaded cog: Slots
+Loaded cog: Blackjack
+Loaded cog: Stats
+2026-07-07 08:11:33,240 | INFO     | cogs | Loaded cog: Emergency
+Loaded cog: Emergency
+Loaded cog: Status
+Loaded cog: NoPrefix
+Loaded cog: FilterCog
+Loaded cog: Global
+Loaded cog: Map
+Loaded cog: TicketSystem
+Loaded cog: Logging
+Loaded cog: QR
+Loaded cog: VanityRoles
+Loaded cog: ReactionRoles
+Loaded cog: Messages
+Loaded cog: TranslateCog
+Loaded cog: FastGreet
+Loaded cog: Jail
+Loaded cog: _antinuke
+Loaded cog: _extra
+Loaded cog: _general
+Loaded cog: _automod
+Loaded cog: _moderation
+Loaded cog: _music
+Loaded cog: _fun
+Loaded cog: _games
+Loaded cog: _ignore
+Loaded cog: _server
+Loaded cog: _voice
+Loaded cog: _welcome
+Loaded cog: _giveaway
+Loaded cog: _ticket
+Loaded cog: Loggingdrop
+Loaded cog: _vanity
+Loaded cog: _inviteTracker
+Loaded cog: AutoBlacklist
+Loaded cog: Guild
+Loaded cog: Errors
+Loaded cog: Autorole2
+Loaded cog: Autorole
+Loaded cog: greet
+Loaded cog: AutoResponder
+Loaded cog: Mention
+Loaded cog: AutoRole
+Loaded cog: React
+Loaded cog: AutoReaction
+Loaded cog: AutoReactListener
+Loaded cog: NotifCommands
+Loaded cog: AntiMemberUpdate
+Loaded cog: AntiBan
+Loaded cog: AntiBotAdd
+Loaded cog: AntiChannelCreate
+Loaded cog: AntiChannelDelete
+Loaded cog: AntiChannelUpdate
+Loaded cog: AntiEveryone
+Loaded cog: AntiGuildUpdate
+Loaded cog: AntiIntegration
+Loaded cog: AntiKick
+Loaded cog: AntiPrune
+Loaded cog: AntiRoleCreate
+Loaded cog: AntiRoleDelete
+Loaded cog: AntiRoleUpdate
+Loaded cog: AntiWebhookUpdate
+Loaded cog: AntiWebhookCreate
+Loaded cog: AntiWebhookDelete
+Loaded cog: AntiSpam
+Loaded cog: AntiCaps
+Loaded cog: AntiInvite
+Loaded cog: AntiLink
+Loaded cog: AntiMassMention
+Loaded cog: AntiEmojiSpam
+Loaded cog: Ban
+Loaded cog: Unban
+Loaded cog: Mute
+Loaded cog: Unmute
+Loaded cog: Lock
+Loaded cog: Unlock
+Loaded cog: Hide
+Loaded cog: Unhide
+Loaded cog: Kick
+Loaded cog: Warn
+Loaded cog: Role
+Loaded cog: Message
+Loaded cog: Moderation
+Loaded cog: TopCheck
+Loaded cog: Snipe
+All REM cogs loaded successfully.
+Loaded extension: cogs
+********************
+2026-07-07 08:11:33,241 | INFO     | cogs | Loaded cog: Status
+2026-07-07 08:11:33,243 | INFO     | cogs | Loaded cog: NoPrefix
+2026-07-07 08:11:33,244 | INFO     | cogs | Loaded cog: FilterCog
+2026-07-07 08:11:33,246 | INFO     | cogs | Loaded cog: Global
+2026-07-07 08:11:33,246 | INFO     | cogs | Loaded cog: Map
+2026-07-07 08:11:33,246 | INFO     | cogs | Loaded cog: TicketSystem
+2026-07-07 08:11:33,247 | INFO     | cogs | Loaded cog: Logging
+2026-07-07 08:11:33,248 | INFO     | cogs | Loaded cog: QR
+2026-07-07 08:11:33,249 | INFO     | cogs | Loaded cog: VanityRoles
+2026-07-07 08:11:33,250 | INFO     | cogs | Loaded cog: ReactionRoles
+2026-07-07 08:11:33,251 | INFO     | cogs | Loaded cog: Messages
+2026-07-07 08:11:33,251 | INFO     | cogs | Loaded cog: TranslateCog
+2026-07-07 08:11:33,253 | INFO     | cogs | Loaded cog: FastGreet
+2026-07-07 08:11:33,256 | INFO     | cogs | Loaded cog: Jail
+2026-07-07 08:11:33,256 | INFO     | cogs | Loaded cog: _antinuke
+2026-07-07 08:11:33,256 | INFO     | cogs | Loaded cog: _extra
+2026-07-07 08:11:33,257 | INFO     | cogs | Loaded cog: _general
+2026-07-07 08:11:33,257 | INFO     | cogs | Loaded cog: _automod
+2026-07-07 08:11:33,257 | INFO     | cogs | Loaded cog: _moderation
+2026-07-07 08:11:33,257 | INFO     | cogs | Loaded cog: _music
+2026-07-07 08:11:33,257 | INFO     | cogs | Loaded cog: _fun
+2026-07-07 08:11:33,257 | INFO     | cogs | Loaded cog: _games
+2026-07-07 08:11:33,258 | INFO     | cogs | Loaded cog: _ignore
+2026-07-07 08:11:33,258 | INFO     | cogs | Loaded cog: _server
+2026-07-07 08:11:33,258 | INFO     | cogs | Loaded cog: _voice
+2026-07-07 08:11:33,258 | INFO     | cogs | Loaded cog: _welcome
+2026-07-07 08:11:33,258 | INFO     | cogs | Loaded cog: _giveaway
+2026-07-07 08:11:33,258 | INFO     | cogs | Loaded cog: _ticket
+2026-07-07 08:11:33,259 | INFO     | cogs | Loaded cog: Loggingdrop
+2026-07-07 08:11:33,259 | INFO     | cogs | Loaded cog: _vanity
+2026-07-07 08:11:33,259 | INFO     | cogs | Loaded cog: _inviteTracker
+2026-07-07 08:11:33,259 | INFO     | cogs | Loaded cog: AutoBlacklist
+2026-07-07 08:11:33,259 | INFO     | cogs | Loaded cog: Guild
+2026-07-07 08:11:33,259 | INFO     | cogs | Loaded cog: Errors
+2026-07-07 08:11:33,259 | INFO     | cogs | Loaded cog: Autorole2
+2026-07-07 08:11:33,259 | INFO     | cogs | Loaded cog: Autorole
+2026-07-07 08:11:33,259 | INFO     | cogs | Loaded cog: greet
+2026-07-07 08:11:33,260 | INFO     | cogs | Loaded cog: AutoResponder
+2026-07-07 08:11:33,260 | INFO     | cogs | Loaded cog: Mention
+2026-07-07 08:11:33,262 | INFO     | cogs | Loaded cog: AutoRole
+2026-07-07 08:11:33,262 | INFO     | cogs | Loaded cog: React
+2026-07-07 08:11:33,263 | INFO     | cogs | Loaded cog: AutoReaction
+2026-07-07 08:11:33,263 | INFO     | cogs | Loaded cog: AutoReactListener
+2026-07-07 08:11:33,264 | INFO     | cogs | Loaded cog: NotifCommands
+2026-07-07 08:11:33,264 | INFO     | cogs | Loaded cog: AntiMemberUpdate
+2026-07-07 08:11:33,264 | INFO     | cogs | Loaded cog: AntiBan
+2026-07-07 08:11:33,264 | INFO     | cogs | Loaded cog: AntiBotAdd
+2026-07-07 08:11:33,264 | INFO     | cogs | Loaded cog: AntiChannelCreate
+2026-07-07 08:11:33,264 | INFO     | cogs | Loaded cog: AntiChannelDelete
+2026-07-07 08:11:33,264 | INFO     | cogs | Loaded cog: AntiChannelUpdate
+2026-07-07 08:11:33,264 | INFO     | cogs | Loaded cog: AntiEveryone
+2026-07-07 08:11:33,264 | INFO     | cogs | Loaded cog: AntiGuildUpdate
+2026-07-07 08:11:33,265 | INFO     | cogs | Loaded cog: AntiIntegration
+2026-07-07 08:11:33,265 | INFO     | cogs | Loaded cog: AntiKick
+2026-07-07 08:11:33,265 | INFO     | cogs | Loaded cog: AntiPrune
+2026-07-07 08:11:33,265 | INFO     | cogs | Loaded cog: AntiRoleCreate
+2026-07-07 08:11:33,265 | INFO     | cogs | Loaded cog: AntiRoleDelete
+2026-07-07 08:11:33,265 | INFO     | cogs | Loaded cog: AntiRoleUpdate
+2026-07-07 08:11:33,265 | INFO     | cogs | Loaded cog: AntiWebhookUpdate
+2026-07-07 08:11:33,265 | INFO     | cogs | Loaded cog: AntiWebhookCreate
+2026-07-07 08:11:33,265 | INFO     | cogs | Loaded cog: AntiWebhookDelete
+2026-07-07 08:11:33,265 | INFO     | cogs | Loaded cog: AntiSpam
+2026-07-07 08:11:33,265 | INFO     | cogs | Loaded cog: AntiCaps
+2026-07-07 08:11:33,266 | INFO     | cogs | Loaded cog: AntiInvite
+2026-07-07 08:11:33,266 | INFO     | cogs | Loaded cog: AntiLink
+2026-07-07 08:11:33,267 | INFO     | cogs | Loaded cog: AntiMassMention
+2026-07-07 08:11:33,267 | INFO     | cogs | Loaded cog: AntiEmojiSpam
+2026-07-07 08:11:33,268 | INFO     | cogs | Loaded cog: Ban
+2026-07-07 08:11:33,268 | INFO     | cogs | Loaded cog: Unban
+2026-07-07 08:11:33,268 | INFO     | cogs | Loaded cog: Mute
+2026-07-07 08:11:33,269 | INFO     | cogs | Loaded cog: Unmute
+2026-07-07 08:11:33,269 | INFO     | cogs | Loaded cog: Lock
+2026-07-07 08:11:33,269 | INFO     | cogs | Loaded cog: Unlock
+2026-07-07 08:11:33,270 | INFO     | cogs | Loaded cog: Hide
+2026-07-07 08:11:33,271 | INFO     | cogs | Loaded cog: Unhide
+2026-07-07 08:11:33,271 | INFO     | cogs | Loaded cog: Kick
+2026-07-07 08:11:33,272 | INFO     | cogs | Loaded cog: Warn
+2026-07-07 08:11:33,275 | INFO     | cogs | Loaded cog: Role
+2026-07-07 08:11:33,276 | INFO     | cogs | Loaded cog: Message
+2026-07-07 08:11:33,279 | INFO     | cogs | Loaded cog: Moderation
+2026-07-07 08:11:33,280 | INFO     | cogs | Loaded cog: TopCheck
+2026-07-07 08:11:33,280 | INFO     | cogs | Loaded cog: Snipe
+2026-07-07 08:11:33,280 | INFO     | cogs | All REM cogs loaded successfully
+2026-07-07 08:11:33,280 | INFO     | core.axon | Loaded extension: cogs
+2026-07-07 08:11:33,281 | INFO     | core.axon | All extensions loaded
+2026-07-07 08:11:34,397 | INFO     | discord.gateway | Shard ID 0 has connected to Gateway (Session ID: 20da63d1823c773dd5994e7c74ed4885).
+2026-07-07 08:11:40,082 | INFO     | discord.gateway | Shard ID 1 has connected to Gateway (Session ID: ce068ebcb870f22eed0026c098bd98e5).
+2026-07-07 08:11:42,095 | INFO     | rem | Loaded and online as REM#6635
+2026-07-07 08:11:42,096 | INFO     | rem | Connected to 1 guilds and 28 cached users
+2026-07-07 08:11:45,060 | INFO     | rem | Synced 220 prefix commands and 99 slash commands
+2026-07-07 08:11:45,236 | INFO     | cogs.commands.music | Connected Lavalink nodes: main
+2026-07-07 08:12:17,494 | INFO     | cogs.commands.emoji_sync | Skipped duplicate source emoji name: enabled
+2026-07-07 08:12:19,451 | INFO     | cogs.commands.emoji_sync | Startup application emoji sync complete: uploaded=0 already=101 skipped=0 failed=0

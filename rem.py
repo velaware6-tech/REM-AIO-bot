@@ -1,32 +1,34 @@
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parent / ".env")
+
 import asyncio
 import logging
 import os
+import signal
 import traceback
 from threading import Thread
 
 import aiohttp
 import discord
 from discord.ext import commands
-from dotenv import load_dotenv
 from flask import Flask
 
 from core.axon import axon
-from utils.config import COMMAND_LOG_IGNORE_IDS
-
-load_dotenv()
+from utils.config import COMMAND_LOG_IGNORE_IDS, COMMAND_LOG_WEBHOOK_URL, ENABLE_KEEP_ALIVE, LOG_LEVEL, PORT, TOKEN
+from utils.startup import StartupError, validate_startup_config
 
 logging.basicConfig(
-    level=os.getenv("LOG_LEVEL", "INFO").upper(),
+    level=LOG_LEVEL,
     format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
 )
 log = logging.getLogger("rem")
 
-TOKEN = (os.getenv("TOKEN") or "").strip()
-COMMAND_LOG_WEBHOOK_URL = os.getenv("COMMAND_LOG_WEBHOOK_URL")
-ENABLE_KEEP_ALIVE = os.getenv("ENABLE_KEEP_ALIVE", "true").lower() in {"1", "true", "yes", "on"}
-
 client = axon()
 app = Flask(__name__)
+_shutdown_requested = False
 
 os.environ["JISHAKU_NO_DM_TRACEBACK"] = "False"
 os.environ["JISHAKU_HIDE"] = "True"
@@ -88,8 +90,14 @@ def home():
     return "REM ALL IN ONE BOT is online"
 
 
+@app.route("/health")
+def health():
+    from flask import jsonify
+    return jsonify(status="ok", bot_ready=client.is_ready())
+
+
 def run_keep_alive():
-    app.run(host="0.0.0.0", port=int(os.getenv("PORT", "8080")), use_reloader=False)
+    app.run(host="0.0.0.0", port=PORT, use_reloader=False)
 
 
 def keep_alive():
@@ -99,15 +107,41 @@ def keep_alive():
     server.start()
 
 
+def _request_shutdown() -> None:
+    global _shutdown_requested
+    if _shutdown_requested:
+        return
+    _shutdown_requested = True
+    log.info("Shutdown requested — closing bot connection...")
+    asyncio.create_task(client.close())
+
+
+def _register_signal_handlers(loop: asyncio.AbstractEventLoop) -> None:
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        try:
+            loop.add_signal_handler(sig, _request_shutdown)
+        except (NotImplementedError, RuntimeError):
+            pass
+
+
 async def main():
-    if not TOKEN:
-        raise RuntimeError("TOKEN is not set. Add it to .env or your process environment.")
+    try:
+        validate_startup_config()
+    except StartupError as exc:
+        log.error("%s", exc)
+        raise SystemExit(1) from exc
 
     keep_alive()
+    loop = asyncio.get_running_loop()
+    _register_signal_handlers(loop)
+
     async with client:
         await client.load_extension("jishaku")
         await client.start(TOKEN)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        log.info("Interrupted — bot stopped.")

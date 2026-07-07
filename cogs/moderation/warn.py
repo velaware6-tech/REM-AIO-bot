@@ -1,9 +1,9 @@
+from utils.database import connect
 from utils import emojis
 
 import discord
 from discord.ext import commands
 from discord import ui
-import aiosqlite
 import asyncio
 from utils.Tools import *
 from utils.cv2_compat import embed_to_view, embeds_to_view
@@ -49,13 +49,13 @@ class Warn(commands.Cog):
         return user.avatar.url if user.avatar else user.default_avatar.url
 
     async def add_warn(self, guild_id: int, user_id: int):
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             await db.execute("INSERT OR IGNORE INTO warns (guild_id, user_id, warns) VALUES (?, ?, 0)", (guild_id, user_id))
             await db.execute("UPDATE warns SET warns = warns + 1 WHERE guild_id = ? AND user_id = ?", (guild_id, user_id))
             await db.commit()
 
     async def get_total_warns(self, guild_id: int, user_id: int):
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             async with db.execute("SELECT warns FROM warns WHERE guild_id = ? AND user_id = ?", (guild_id, user_id)) as cursor:
                 row = await cursor.fetchone()
                 if row:
@@ -63,13 +63,13 @@ class Warn(commands.Cog):
                 return 0
 
     async def reset_warns(self, guild_id: int, user_id: int):
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             await db.execute("UPDATE warns SET warns = 0 WHERE guild_id = ? AND user_id = ?", (guild_id, user_id))
             await db.commit()
 
     async def setup(self):
         try:
-            async with aiosqlite.connect(self.db_path) as db:
+            async with connect(self.db_path) as db:
                 await db.execute("""
                 CREATE TABLE IF NOT EXISTS warns (
                     guild_id INTEGER,

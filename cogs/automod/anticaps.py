@@ -1,8 +1,8 @@
+from utils.database import connect
 from utils import emojis
 
 import discord
 from discord.ext import commands
-import aiosqlite
 import asyncio
 from datetime import timedelta
 from utils.cv2_compat import embed_to_view, embeds_to_view
@@ -14,35 +14,35 @@ class AntiCaps(commands.Cog):
         self.mute_duration = 2 * 60
 
     async def is_automod_enabled(self, guild_id):
-        async with aiosqlite.connect("db/automod.db") as db:
+        async with connect('automod.db') as db:
             cursor = await db.execute("SELECT enabled FROM automod WHERE guild_id = ?", (guild_id,))
             result = await cursor.fetchone()
             return result is not None and result[0] == 1
 
     async def is_anti_caps_enabled(self, guild_id):
-        async with aiosqlite.connect("db/automod.db") as db:
+        async with connect('automod.db') as db:
             cursor = await db.execute("SELECT punishment FROM automod_punishments WHERE guild_id = ? AND event = 'Anti caps'", (guild_id,))
             result = await cursor.fetchone()
             return result is not None
 
     async def get_ignored_channels(self, guild_id):
-        async with aiosqlite.connect("db/automod.db") as db:
+        async with connect('automod.db') as db:
             cursor = await db.execute("SELECT id FROM automod_ignored WHERE guild_id = ? AND type = 'channel'", (guild_id,))
             return [row[0] for row in await cursor.fetchall()]
 
     async def get_ignored_roles(self, guild_id):
-        async with aiosqlite.connect("db/automod.db") as db:
+        async with connect('automod.db') as db:
             cursor = await db.execute("SELECT id FROM automod_ignored WHERE guild_id = ? AND type = 'role'", (guild_id,))
             return [row[0] for row in await cursor.fetchall()]
 
     async def get_punishment(self, guild_id):
-        async with aiosqlite.connect("db/automod.db") as db:
+        async with connect('automod.db') as db:
             cursor = await db.execute("SELECT punishment FROM automod_punishments WHERE guild_id = ? AND event = 'Anti caps'", (guild_id,))
             result = await cursor.fetchone()
             return result[0] if result else None
 
     async def log_action(self, guild, user, channel, action, reason):
-        async with aiosqlite.connect("db/automod.db") as db:
+        async with connect('automod.db') as db:
             cursor = await db.execute("SELECT log_channel FROM automod_logging WHERE guild_id = ?", (guild.id,))
             log_channel_id = await cursor.fetchone()
 

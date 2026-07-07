@@ -1,9 +1,10 @@
+from utils.database import open_connection
 from utils import emojis
 
 from discord.ext import commands, tasks
 import datetime, pytz, time as t
 from discord.ui import Button, Select, View
-import aiosqlite, random, typing
+import random, typing
 import sqlite3
 import asyncio
 import discord, logging
@@ -62,7 +63,7 @@ class Giveaway(commands.Cog):
         self.bot = bot
 
     async def cog_load(self) -> None:
-        self.connection = await aiosqlite.connect(db_path)
+        self.connection = await open_connection(db_path)
         self.cursor = await self.connection.cursor()
         await self.check_for_ended_giveaways() 
         self.GiveawayEnd.start()

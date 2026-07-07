@@ -8,7 +8,6 @@ import discord
 import json
 import datetime
 import asyncio
-import aiosqlite
 from typing import Optional
 from utils import Paginator, DescriptionEmbedPaginator, FieldPagePaginator, TextPaginator
 from utils.Tools import *
@@ -27,6 +26,7 @@ from utils.cv2_compat import embed_to_view, embeds_to_view
 
 
 
+from utils.database import connect
 BADGE_URLS = {
     "owner": "https://cdn.discordapp.com/emojis/1228227536207740989.png",
     "staff": "https://cdn.discordapp.com/emojis/1228227884481515613.png",
@@ -167,7 +167,7 @@ class Owner(commands.Cog):
         
 
     async def setup_database(self):
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             await db.execute('''
                 CREATE TABLE IF NOT EXISTS staff (
                     id INTEGER PRIMARY KEY
@@ -182,7 +182,7 @@ class Owner(commands.Cog):
             await self.client.wait_until_ready()
         except RuntimeError:
             pass
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             async with db.execute('SELECT id FROM staff') as cursor:
                 self.staff = {row[0] for row in await cursor.fetchall()}
 
@@ -194,7 +194,7 @@ class Owner(commands.Cog):
             await ctx.reply(view = embed_to_view(sonu), mention_author=False)
         else:
             self.staff.add(user.id)
-            async with aiosqlite.connect(self.db_path) as db:
+            async with connect(self.db_path) as db:
                 await db.execute('INSERT OR IGNORE INTO staff (id) VALUES (?)', (user.id,))
                 await db.commit()
             sonu2 = discord.Embed(title=f"{emojis.TICK} Success", description=f"Added {user} to the staff list.", color=0x000000)
@@ -208,7 +208,7 @@ class Owner(commands.Cog):
             await ctx.reply(view = embed_to_view(sonu), mention_author=False)
         else:
             self.staff.remove(user.id)
-            async with aiosqlite.connect(self.db_path) as db:
+            async with connect(self.db_path) as db:
                 await db.execute('DELETE FROM staff WHERE id = ?', (user.id,))
                 await db.commit()
                 sonu2 = discord.Embed(title=f"{emojis.TICK} Success", description=f"Removed {user} from the staff list.", color=0x000000)

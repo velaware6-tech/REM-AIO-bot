@@ -1,6 +1,6 @@
+from utils.database import connect
 import discord
 from discord.ext import commands
-import aiosqlite
 import re
 import asyncio
 
@@ -11,7 +11,7 @@ class AutoReactListener(commands.Cog):
         self.rate_limited_users = set()
 
     async def get_triggers(self, guild_id):
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             cursor = await db.execute("SELECT trigger, emojis FROM autoreact WHERE guild_id = ?", (guild_id,))
             return await cursor.fetchall()
 

@@ -1,9 +1,9 @@
+from utils.database import connect
 from utils import emojis
 
 import asyncio
 import discord
 from discord.ext import commands
-import aiosqlite
 from utils.Tools import *
 from utils.config import BYPASS_IDS
 from utils.cv2_compat import embed_to_view, embeds_to_view
@@ -40,7 +40,7 @@ class Emergency(commands.Cog):
         asyncio.create_task(self.initialize_database())
 
     async def initialize_database(self):
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             await db.execute("""
                 CREATE TABLE IF NOT EXISTS authorised_users (
                     guild_id INTEGER,
@@ -76,7 +76,7 @@ class Emergency(commands.Cog):
     async def is_guild_owner_or_authorised(self, ctx):
         if await self.is_guild_owner(ctx):
             return True
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             async with db.execute("SELECT 1 FROM authorised_users WHERE guild_id = ? AND user_id = ?", (ctx.guild.id, ctx.author.id)) as cursor:
                 return await cursor.fetchone() is not None
 
@@ -117,7 +117,7 @@ class Emergency(commands.Cog):
         dangerous_permissions = ["administrator", "ban_members", "kick_members", "manage_channels", "manage_roles", "manage_guild"]
         roles_added = []
 
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             for role in ctx.guild.roles:
                 
                 if role.managed or role.is_bot_managed():
@@ -158,7 +158,7 @@ class Emergency(commands.Cog):
             embed = discord.Embed(title=f"{emojis.CROSSICON} Error", description="Only the server owner can disable emergency mode.", color=0x000000)
             return await ctx.reply(view = embed_to_view(embed))
 
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             await db.execute("DELETE FROM emergency_roles WHERE guild_id = ?", (ctx.guild.id,))
             await db.commit()
 
@@ -192,7 +192,7 @@ class Emergency(commands.Cog):
             embed = discord.Embed(title=f"{emojis.CROSSICON} Error", description="Only the server owner can add authorised users for executing emergency situation.", color=0x000000)
             return await ctx.reply(view = embed_to_view(embed))
 
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             async with db.execute("SELECT COUNT(*) FROM authorised_users WHERE guild_id = ?", (ctx.guild.id,)) as cursor:
                 count = (await cursor.fetchone())[0]
             if count >= 5:
@@ -222,7 +222,7 @@ class Emergency(commands.Cog):
             embed = discord.Embed(title=f"{emojis.ICONS_WARNING} Access Denied", description="Only the server owner can remove authorised users for emergency situation.", color=0x000000)
             return await ctx.reply(view = embed_to_view(embed))
 
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             async with db.execute("SELECT 1 FROM authorised_users WHERE guild_id = ? AND user_id = ?", (ctx.guild.id, member.id)) as cursor:
                 if not await cursor.fetchone():
                     embed = discord.Embed(title=f"{emojis.CROSSICON} Error", description="This user is not authorised.", color=0x000000)
@@ -247,7 +247,7 @@ class Emergency(commands.Cog):
             return await ctx.reply(view = embed_to_view(embed))
 
         
-        async with aiosqlite.connect('db/emergency.db') as db:
+        async with connect('emergency.db') as db:
             cursor = await db.execute("SELECT user_id FROM authorised_users WHERE guild_id = ?", (ctx.guild.id,))
             authorized_users = await cursor.fetchall()
             
@@ -289,7 +289,7 @@ class Emergency(commands.Cog):
             return await ctx.reply(view = embed_to_view(embed))
 
 
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             async with db.execute("SELECT COUNT(*) FROM emergency_roles WHERE guild_id = ?", (ctx.guild.id,)) as cursor:
                 count = (await cursor.fetchone())[0]
             if count >= 25:
@@ -319,7 +319,7 @@ class Emergency(commands.Cog):
             embed = discord.Embed(title=f"{emojis.ICONS_WARNING} Access Denied", description="Only the server owner can remove roles from emergency list.", color=0x000000)
             return await ctx.reply(view = embed_to_view(embed))
 
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             async with db.execute("SELECT 1 FROM emergency_roles WHERE guild_id = ? AND role_id = ?", (ctx.guild.id, role.id)) as cursor:
                 if not await cursor.fetchone():
                     embed = discord.Embed(title=f"{emojis.CROSSICON} Error", description="This role is not in the emergency list.", color=0x000000)
@@ -344,7 +344,7 @@ class Emergency(commands.Cog):
             return await ctx.reply(view = embed_to_view(embed))
 
         
-        async with aiosqlite.connect('db/emergency.db') as db:
+        async with connect('emergency.db') as db:
             cursor = await db.execute("SELECT role_id FROM emergency_roles WHERE guild_id = ?", (ctx.guild.id,))
             roles = await cursor.fetchall()
 
@@ -383,7 +383,7 @@ class Emergency(commands.Cog):
         processing_message = await ctx.send(view = embed_to_view(discord.Embed(title=" Processing Emergency Situation, wait for a while...", color=0x000000)))
 
         antinuke_enabled = False
-        async with aiosqlite.connect('db/anti.db') as anti:
+        async with connect('anti.db') as anti:
             async with anti.execute("SELECT status FROM antinuke WHERE guild_id = ?", (guild_id,)) as cursor:
                 antinuke_status = await cursor.fetchone()
             if antinuke_status:
@@ -394,11 +394,11 @@ class Emergency(commands.Cog):
                 
                 
 
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             await db.execute("DELETE FROM restore_roles WHERE guild_id = ?", (ctx.guild.id,))
             await db.commit()
 
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             cursor = await db.execute("SELECT role_id FROM emergency_roles WHERE guild_id = ?", (ctx.guild.id,))
             emergency_roles = await cursor.fetchall()
 
@@ -418,7 +418,7 @@ class Emergency(commands.Cog):
         modified_roles = []
         unchanged_roles = []
 
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             for role_data in emergency_roles:
                 role = ctx.guild.get_role(role_data[0])
 
@@ -493,7 +493,7 @@ class Emergency(commands.Cog):
                 color=0x000000)))
 
         if antinuke_enabled:
-            async with aiosqlite.connect('db/anti.db') as anti:
+            async with connect('anti.db') as anti:
                 await anti.execute("INSERT INTO antinuke (guild_id, status) VALUES (?, 1)", (guild_id,))
                 await anti.commit()
 
@@ -514,7 +514,7 @@ class Emergency(commands.Cog):
                 description="Only the server owner can execute the emergency restore command.", 
                 color=0x000000)))
 
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             cursor = await db.execute("SELECT role_id, disabled_perms FROM restore_roles WHERE guild_id = ?", (ctx.guild.id,))
             restore_roles = await cursor.fetchall()
 
@@ -549,7 +549,7 @@ class Emergency(commands.Cog):
         modified_roles = []
         unchanged_roles = []
 
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             for role_id, disabled_perms in restore_roles:
                 role = ctx.guild.get_role(role_id)
 

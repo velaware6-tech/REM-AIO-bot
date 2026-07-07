@@ -1,7 +1,7 @@
+from utils.database import connect
 import asyncio
 import discord
 from discord.ext import commands, tasks
-import aiosqlite
 import aiohttp
 import os
 from utils.Tools import *
@@ -17,7 +17,7 @@ class VanityRoles(commands.Cog):
 
     async def initialize_db(self):
         os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             await db.execute("""
                 CREATE TABLE IF NOT EXISTS vanity_roles (
                     guild_id INTEGER,
@@ -48,7 +48,7 @@ class VanityRoles(commands.Cog):
     @blacklist_check()
     @ignore_check()
     async def setup(self, ctx, vanity: str, role: discord.Role, channel: discord.TextChannel):
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             await db.execute("""
                 INSERT OR REPLACE INTO vanity_roles (guild_id, vanity, role_id, log_channel_id, current_status)
                 VALUES (?, ?, ?, ?, NULL)
@@ -65,7 +65,7 @@ class VanityRoles(commands.Cog):
     @blacklist_check()
     @ignore_check()
     async def show(self, ctx):
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             async with db.execute("SELECT vanity, role_id, log_channel_id FROM vanity_roles WHERE guild_id = ?", (ctx.guild.id,)) as cursor:
                 rows = await cursor.fetchall()
 
@@ -87,14 +87,14 @@ class VanityRoles(commands.Cog):
     @blacklist_check()
     @ignore_check()
     async def reset(self, ctx):
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             await db.execute("DELETE FROM vanity_roles WHERE guild_id = ?", (ctx.guild.id,))
             await db.commit()
         await ctx.send("✅ All vanity role configurations have been reset.")
 
     @tasks.loop(seconds=15)
     async def vanity_checker(self):
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             async with db.execute("SELECT guild_id, vanity, role_id, log_channel_id, current_status FROM vanity_roles") as cursor:
                 rows = await cursor.fetchall()
 
@@ -140,7 +140,7 @@ class VanityRoles(commands.Cog):
                     await log_channel.send(f"❌ Vanity `{vanity}` is now **inactive**. Role removed from {removed} members.")
 
     async def update_status(self, guild_id, vanity, new_status):
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             await db.execute("""
                 UPDATE vanity_roles SET current_status = ? WHERE guild_id = ? AND vanity = ?
             """, (new_status, guild_id, vanity))

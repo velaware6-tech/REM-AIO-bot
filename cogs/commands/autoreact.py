@@ -1,10 +1,10 @@
+from utils.database import connect
 from utils import emojis
 from utils.components_v2 import success_panel, error_panel, info_panel
 
 import asyncio
 import discord
 from discord.ext import commands
-import aiosqlite
 import re
 from utils.Tools import *
 
@@ -15,7 +15,7 @@ class AutoReaction(commands.Cog):
         asyncio.create_task(self.setup_database())
 
     async def setup_database(self):
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             await db.execute("""
                 CREATE TABLE IF NOT EXISTS autoreact (
                     guild_id INTEGER,
@@ -26,12 +26,12 @@ class AutoReaction(commands.Cog):
             await db.commit()
 
     async def get_triggers(self, guild_id):
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             cursor = await db.execute("SELECT trigger, emojis FROM autoreact WHERE guild_id = ?", (guild_id,))
             return await cursor.fetchall()
 
     async def trigger_exists(self, guild_id, trigger):
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             cursor = await db.execute("SELECT 1 FROM autoreact WHERE guild_id = ? AND trigger = ?", (guild_id, trigger))
             return await cursor.fetchone()
 
@@ -81,7 +81,7 @@ class AutoReaction(commands.Cog):
                 title=f"{emojis.ICONS_WARNING} Trigger Exists"
             ))
 
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             await db.execute("INSERT INTO autoreact (guild_id, trigger, emojis) VALUES (?, ?, ?)", 
                              (ctx.guild.id, trigger, " ".join(emoji_list)))
             await db.commit()
@@ -105,7 +105,7 @@ class AutoReaction(commands.Cog):
                 title=f"{emojis.CROSSICON} Trigger Not Found"
             ))
 
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             await db.execute("DELETE FROM autoreact WHERE guild_id = ? AND trigger = ?", (ctx.guild.id, trigger))
             await db.commit()
 
@@ -150,7 +150,7 @@ class AutoReaction(commands.Cog):
                 title=f"{emojis.CROSSICON} No Triggers Set"
             ))
 
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             await db.execute("DELETE FROM autoreact WHERE guild_id = ?", (ctx.guild.id,))
             await db.commit()
 

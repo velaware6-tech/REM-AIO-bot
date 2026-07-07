@@ -17,6 +17,7 @@ import aiohttp
 from typing import cast
 import asyncio
 from utils.Tools import *
+from utils.config import SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET
 from utils.cv2_compat import embed_to_view, embeds_to_view
 track_histories = {}
 import base64
@@ -77,7 +78,16 @@ class SpotifyAPI:
     async def get_playlist(self, playlist_id):
         return await self.get(f"playlists/{playlist_id}")
 
-spotify_api = SpotifyAPI(client_id="ac2b614ca5ce46a18dfd1d3475fd6fd9", client_secret="df7bec95ae88438e8286db597bac8621")
+_spotify_api: SpotifyAPI | None = None
+
+
+def get_spotify_api() -> SpotifyAPI | None:
+    global _spotify_api
+    if not SPOTIFY_CLIENT_ID or not SPOTIFY_CLIENT_SECRET:
+        return None
+    if _spotify_api is None:
+        _spotify_api = SpotifyAPI(client_id=SPOTIFY_CLIENT_ID, client_secret=SPOTIFY_CLIENT_SECRET)
+    return _spotify_api
 
 class PlatformSelectView(View):
     def __init__(self, ctx, query):
@@ -681,6 +691,10 @@ class Music(commands.Cog):
 
     
     async def handle_spotify_link(self, ctx, vc, link, type_):
+        spotify_api = get_spotify_api()
+        if not spotify_api:
+            await ctx.send("Spotify is not configured. Set `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET` in `.env`.")
+            return
         try:
             if type_ == "track":
                 track_id = re.search(SPOTIFY_TRACK_REGEX, link).group(1)

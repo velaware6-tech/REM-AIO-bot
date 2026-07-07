@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import Literal, Optional
 
 import aiohttp
-import aiosqlite
 import discord
 import yaml
 from discord.ext import commands
@@ -21,6 +20,7 @@ from PIL import Image
 from utils import emojis
 from utils.components_v2 import basic_panel, button
 
+from utils.database import connect
 log = logging.getLogger(__name__)
 
 DB_PATH = "db/emoji_sync.db"
@@ -110,7 +110,7 @@ class EmojiSync(commands.Cog):
         await self._ensure_db()
 
     async def _ensure_db(self) -> None:
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             await db.execute(
                 """
                 CREATE TABLE IF NOT EXISTS emoji_sync_settings (
@@ -138,7 +138,7 @@ class EmojiSync(commands.Cog):
             await db.commit()
 
     async def _get_settings(self, guild_id: int) -> tuple[bool, bool]:
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             async with db.execute(
                 "SELECT auto_sync, sync_to_application FROM emoji_sync_settings WHERE guild_id = ?",
                 (guild_id,),
@@ -161,7 +161,7 @@ class EmojiSync(commands.Cog):
         next_app = current_app if sync_to_application is None else sync_to_application
         now = discord.utils.utcnow().isoformat()
 
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             await db.execute(
                 """
                 INSERT OR REPLACE INTO emoji_sync_settings
@@ -180,7 +180,7 @@ class EmojiSync(commands.Cog):
             "skipped": result.skipped,
             "failed": result.failed,
         }
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             await db.execute(
                 """
                 INSERT INTO emoji_sync_runs
@@ -200,7 +200,7 @@ class EmojiSync(commands.Cog):
             await db.commit()
 
     async def _latest_run(self, guild_id: int) -> Optional[dict]:
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             async with db.execute(
                 """
                 SELECT status, uploaded, skipped, failed, created_at, details
@@ -637,7 +637,7 @@ class EmojiSync(commands.Cog):
         except Exception:
             log.exception("Startup application emoji sync failed")
 
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             async with db.execute(
                 "SELECT guild_id, sync_to_application FROM emoji_sync_settings WHERE auto_sync = 1"
             ) as cursor:

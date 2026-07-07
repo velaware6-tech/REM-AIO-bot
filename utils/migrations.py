@@ -1,27 +1,16 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 
-import aiosqlite
+from utils.database import connect, execute_many
 
 log = logging.getLogger(__name__)
-
-DB_DIR = Path("db")
-
-
-async def _execute_many(db_path: Path, statements: list[str]) -> None:
-    DB_DIR.mkdir(exist_ok=True)
-    async with aiosqlite.connect(db_path) as db:
-        for statement in statements:
-            await db.execute(statement)
-        await db.commit()
 
 
 async def run_startup_migrations() -> None:
     """Create missing tables used by startup checks without changing data."""
-    await _execute_many(
-        DB_DIR / "prefix.db",
+    await execute_many(
+        "prefix.db",
         [
             """
             CREATE TABLE IF NOT EXISTS prefixes (
@@ -32,8 +21,8 @@ async def run_startup_migrations() -> None:
         ],
     )
 
-    await _execute_many(
-        DB_DIR / "np.db",
+    await execute_many(
+        "np.db",
         [
             """
             CREATE TABLE IF NOT EXISTS np (
@@ -54,15 +43,15 @@ async def run_startup_migrations() -> None:
         ],
     )
 
-    async with aiosqlite.connect(DB_DIR / "np.db") as db:
+    async with connect("np.db") as db:
         async with db.execute("PRAGMA table_info(np)") as cursor:
             columns = {row[1] for row in await cursor.fetchall()}
         if "expiry_time" not in columns:
             await db.execute("ALTER TABLE np ADD COLUMN expiry_time TEXT NULL")
         await db.commit()
 
-    await _execute_many(
-        DB_DIR / "block.db",
+    await execute_many(
+        "block.db",
         [
             """
             CREATE TABLE IF NOT EXISTS user_blacklist (
@@ -85,8 +74,8 @@ async def run_startup_migrations() -> None:
         ],
     )
 
-    await _execute_many(
-        DB_DIR / "ignore.db",
+    await execute_many(
+        "ignore.db",
         [
             "CREATE TABLE IF NOT EXISTS ignored_commands (guild_id INTEGER, command_name TEXT)",
             "CREATE TABLE IF NOT EXISTS ignored_channels (guild_id INTEGER, channel_id INTEGER)",
@@ -95,8 +84,8 @@ async def run_startup_migrations() -> None:
         ],
     )
 
-    await _execute_many(
-        DB_DIR / "topcheck.db",
+    await execute_many(
+        "topcheck.db",
         [
             """
             CREATE TABLE IF NOT EXISTS topcheck (
@@ -107,8 +96,8 @@ async def run_startup_migrations() -> None:
         ],
     )
 
-    await _execute_many(
-        DB_DIR / "automod.db",
+    await execute_many(
+        "automod.db",
         [
             """
             CREATE TABLE IF NOT EXISTS automod (
@@ -139,8 +128,8 @@ async def run_startup_migrations() -> None:
         ],
     )
 
-    await _execute_many(
-        DB_DIR / "emoji_sync.db",
+    await execute_many(
+        "emoji_sync.db",
         [
             """
             CREATE TABLE IF NOT EXISTS emoji_sync_settings (
@@ -160,6 +149,111 @@ async def run_startup_migrations() -> None:
                 failed INTEGER NOT NULL DEFAULT 0,
                 details TEXT,
                 created_at TEXT NOT NULL
+            )
+            """,
+        ],
+    )
+
+    await execute_many(
+        "anti.db",
+        [
+            """
+            CREATE TABLE IF NOT EXISTS antinuke (
+                guild_id INTEGER PRIMARY KEY,
+                status BOOLEAN NOT NULL DEFAULT 0
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS extraowners (
+                guild_id INTEGER,
+                owner_id INTEGER,
+                PRIMARY KEY (guild_id, owner_id)
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS whitelisted_users (
+                guild_id INTEGER,
+                user_id INTEGER,
+                ban BOOLEAN DEFAULT 0,
+                kick BOOLEAN DEFAULT 0,
+                prune BOOLEAN DEFAULT 0,
+                botadd BOOLEAN DEFAULT 0,
+                serverup BOOLEAN DEFAULT 0,
+                memup BOOLEAN DEFAULT 0,
+                chcr BOOLEAN DEFAULT 0,
+                chdl BOOLEAN DEFAULT 0,
+                chup BOOLEAN DEFAULT 0,
+                rlcr BOOLEAN DEFAULT 0,
+                rlup BOOLEAN DEFAULT 0,
+                rldl BOOLEAN DEFAULT 0,
+                meneve BOOLEAN DEFAULT 0,
+                mngweb BOOLEAN DEFAULT 0,
+                mngstemo BOOLEAN DEFAULT 0,
+                PRIMARY KEY (guild_id, user_id)
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS limit_settings (
+                guild_id INTEGER,
+                action_type TEXT,
+                action_limit INTEGER,
+                time_window INTEGER,
+                PRIMARY KEY (guild_id, action_type)
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS Nightmode (
+                guildId TEXT,
+                roleId TEXT,
+                adminPermissions INTEGER
+            )
+            """,
+        ],
+    )
+
+    await execute_many(
+        "warn.db",
+        [
+            """
+            CREATE TABLE IF NOT EXISTS warnings (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                guild_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                moderator_id INTEGER NOT NULL,
+                reason TEXT,
+                timestamp TEXT NOT NULL
+            )
+            """,
+        ],
+    )
+
+    await execute_many(
+        "afk.db",
+        [
+            """
+            CREATE TABLE IF NOT EXISTS afk (
+                user_id INTEGER PRIMARY KEY,
+                reason TEXT,
+                since TEXT
+            )
+            """,
+        ],
+    )
+
+    await execute_many(
+        "giveaways.db",
+        [
+            """
+            CREATE TABLE IF NOT EXISTS Giveaway (
+                guild_id INTEGER,
+                host_id INTEGER,
+                start_time TIMESTAMP,
+                ends_at TIMESTAMP,
+                prize TEXT,
+                winners INTEGER,
+                message_id INTEGER,
+                channel_id INTEGER,
+                PRIMARY KEY (guild_id, message_id)
             )
             """,
         ],

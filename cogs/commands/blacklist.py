@@ -1,10 +1,10 @@
+from utils.database import connect
 from utils import emojis
 
 import asyncio
 import discord
 from discord.ext import commands
 from discord.ext import menus
-import aiosqlite
 import os
 from utils.Tools import *
 from typing import Union
@@ -36,7 +36,7 @@ DB_PATH = "db/blword.db"
 
  
 async def create_blacklist_table():
-    async with aiosqlite.connect(DB_PATH) as db:
+    async with connect(DB_PATH) as db:
         await db.execute("""
             CREATE TABLE IF NOT EXISTS blacklist (
                 guild_id TEXT,
@@ -48,7 +48,7 @@ async def create_blacklist_table():
 
 
 async def create_bypass_table():
-    async with aiosqlite.connect(DB_PATH) as db:
+    async with connect(DB_PATH) as db:
         await db.execute("""
             CREATE TABLE IF NOT EXISTS bypass (
                 guild_id TEXT,
@@ -60,7 +60,7 @@ async def create_bypass_table():
 
 
 async def create_bypass_roles_table():
-    async with aiosqlite.connect(DB_PATH) as db:
+    async with connect(DB_PATH) as db:
         await db.execute("""
             CREATE TABLE IF NOT EXISTS bypass_roles (
                 guild_id TEXT,
@@ -82,79 +82,79 @@ class Blacklist(commands.Cog):
         
 ############ FUNCTIONS ############
     async def is_word_blacklisted(self, guild_id, word):
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             async with db.execute("SELECT * FROM blacklist WHERE guild_id = ? AND word = ?", (guild_id, word)) as cursor:
                 return await cursor.fetchone() is not None
                 
 
     async def add_word_to_blacklist(self, guild_id, word):
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             await db.execute("INSERT INTO blacklist (guild_id, word) VALUES (?, ?)", (guild_id, word))
             await db.commit()
             
 
     async def remove_word_from_blacklist(self, guild_id, word):
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             await db.execute("DELETE FROM blacklist WHERE guild_id = ? AND word = ?", (guild_id, word))
             await db.commit()
             
 
     async def get_blacklisted_words(self, guild_id):
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             async with db.execute("SELECT word FROM blacklist WHERE guild_id = ?", (guild_id,)) as cursor:
                 return [row[0] async for row in cursor]
                 
 
     async def is_user_bypassed(self, guild_id, user_id):
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             async with db.execute("SELECT * FROM bypass WHERE guild_id = ? AND user_id = ?", (guild_id, user_id)) as cursor:
                 return await cursor.fetchone() is not None
                 
 
     async def add_user_to_bypass(self, guild_id, user_id):
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             await db.execute("INSERT INTO bypass (guild_id, user_id) VALUES (?, ?)", (guild_id, user_id))
             await db.commit()
             
 
     async def remove_user_from_bypass(self, guild_id, user_id):
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             await db.execute("DELETE FROM bypass WHERE guild_id = ? AND user_id = ?", (guild_id, user_id))
             await db.commit()
             
 
     async def get_bypassed_users(self, guild_id):
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             async with db.execute("SELECT user_id FROM bypass WHERE guild_id = ?", (guild_id,)) as cursor:
                 return [row[0] async for row in cursor]
                 
 
     async def is_role_bypassed(self, guild_id, role_id):
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             async with db.execute("SELECT * FROM bypass_roles WHERE guild_id = ? AND role_id = ?", (guild_id, role_id)) as cursor:
                 return await cursor.fetchone() is not None
                 
 
     async def add_role_to_bypass(self, guild_id, role_id):
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             await db.execute("INSERT INTO bypass_roles (guild_id, role_id) VALUES (?, ?)", (guild_id, role_id))
             await db.commit()
             
 
     async def remove_role_from_bypass(self, guild_id, role_id):
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             await db.execute("DELETE FROM bypass_roles WHERE guild_id = ? AND role_id = ?", (guild_id, role_id))
             await db.commit()
             
 
     async def get_bypassed_roles(self, guild_id):
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             async with db.execute("SELECT role_id FROM bypass_roles WHERE guild_id = ?", (guild_id,)) as cursor:
                 return [row[0] async for row in cursor]
 
 
     async def remove_all_words_from_blacklist(self, guild_id):
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with connect(DB_PATH) as db:
             await db.execute("DELETE FROM blacklist WHERE guild_id = ?", (guild_id,))
             await db.commit()
 

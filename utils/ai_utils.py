@@ -7,6 +7,7 @@ import json
 from langdetect import detect
 from gtts import gTTS
 from urllib.parse import quote
+from utils.config import OPENAI_API_KEY
 from utils.config_loader import load_current_language, config
 from openai import AsyncOpenAI
 from duckduckgo_search import AsyncDDGS
@@ -17,12 +18,25 @@ load_dotenv()
 current_language = load_current_language()
 internet_access = config['INTERNET_ACCESS']
 
-client = AsyncOpenAI(
-    base_url=config['API_BASE_URL'],
-    api_key=os.getenv("OPENAI_API_KEY") or os.getenv("AI_API_KEY") or "missing-api-key",
-)
+_client: AsyncOpenAI | None = None
+
+
+def get_openai_client() -> AsyncOpenAI | None:
+    global _client
+    if not OPENAI_API_KEY:
+        return None
+    if _client is None:
+        _client = AsyncOpenAI(
+            base_url=config["API_BASE_URL"],
+            api_key=OPENAI_API_KEY,
+        )
+    return _client
 
 async def generate_response(instructions, history):
+    client = get_openai_client()
+    if client is None:
+        return "AI features are not configured. Set `OPENAI_API_KEY` in `.env`."
+
     messages = [
             {"role": "system", "name": "instructions", "content": instructions},
             *history,

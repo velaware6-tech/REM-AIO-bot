@@ -1,10 +1,10 @@
+from utils.database import open_connection
 from utils import emojis
 from utils.components_v2 import success_panel, error_panel, info_panel
 
 import asyncio
 import discord
 from discord.ext import commands
-import aiosqlite
 from utils.Tools import *
 
 
@@ -14,7 +14,7 @@ class Unwhitelist(commands.Cog):
         asyncio.create_task(self.initialize_db())
 
     async def initialize_db(self):
-        self.db = await aiosqlite.connect('db/anti.db')
+        self.db = await open_connection('anti.db')
 
     @commands.hybrid_command(name='unwhitelist', aliases=['unwl'], help="Unwhitelist a user from antinuke")
     @commands.has_permissions(administrator=True)

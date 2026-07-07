@@ -1,8 +1,8 @@
+from utils.database import open_connection
 from utils import emojis
 
 import discord
 from discord.ext import commands
-import aiosqlite
 import asyncio
 from utils.Tools import *
 from utils.cv2_compat import embed_to_view, embeds_to_view
@@ -14,7 +14,7 @@ class Antinuke(commands.Cog):
     asyncio.create_task(self.initialize_db())
 
   async def initialize_db(self):
-    self.db = await aiosqlite.connect('db/anti.db')
+    self.db = await open_connection('anti.db')
     await self.db.execute('''
         CREATE TABLE IF NOT EXISTS antinuke (
             guild_id INTEGER PRIMARY KEY,

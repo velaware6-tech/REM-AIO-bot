@@ -1,9 +1,9 @@
+from utils.database import connect
 from utils import emojis
 
 import asyncio
 import discord
 from discord.ext import commands
-import aiosqlite
 from utils.Tools import *
 from utils.cv2_compat import embed_to_view, embeds_to_view
 
@@ -67,7 +67,7 @@ class Automod(commands.Cog):
         asyncio.create_task(self.init_db())
 
     async def get_exempt_roles_channels(self, guild_id):
-        async with aiosqlite.connect("db/automod.db") as db:
+        async with connect('automod.db') as db:
             roles_cursor = await db.execute("SELECT id FROM automod_ignored WHERE guild_id = ? AND type = 'role'", (guild_id,))
             channels_cursor = await db.execute("SELECT id FROM automod_ignored WHERE guild_id = ? AND type = 'channel'", (guild_id,))
             
@@ -78,18 +78,18 @@ class Automod(commands.Cog):
             
 
     async def is_automod_enabled(self, guild_id):
-        async with aiosqlite.connect("db/automod.db") as db:
+        async with connect('automod.db') as db:
             cursor = await db.execute("SELECT enabled FROM automod WHERE guild_id = ?", (guild_id,))
             result = await cursor.fetchone()
             return result is not None and result[0] == 1
 
     async def update_punishments(self, guild_id, event, punishment):
-        async with aiosqlite.connect("db/automod.db") as db:
+        async with connect('automod.db') as db:
             await db.execute("INSERT OR REPLACE INTO automod_punishments (guild_id, event, punishment) VALUES (?, ?, ?)", (guild_id, event, punishment))
             await db.commit()
 
     async def get_current_punishments(self, guild_id):
-        async with aiosqlite.connect("db/automod.db") as db:
+        async with connect('automod.db') as db:
             async with db.execute(
                 "SELECT event, punishment FROM automod_punishments WHERE guild_id = ? AND event != 'Anti NSFW link'", 
                 (guild_id,)
@@ -97,7 +97,7 @@ class Automod(commands.Cog):
                 return await cursor.fetchall()
 
     async def is_anti_nsfw_enabled(self, guild_id):
-        async with aiosqlite.connect("db/automod.db") as db:
+        async with connect('automod.db') as db:
             cursor = await db.execute("SELECT punishment FROM automod_punishments WHERE guild_id = ? AND event = 'Anti NSFW link'", (guild_id,))
             result = await cursor.fetchone()
             return result is not None
@@ -105,7 +105,7 @@ class Automod(commands.Cog):
                 
 
     async def init_db(self):
-        async with aiosqlite.connect("db/automod.db") as db:
+        async with connect('automod.db') as db:
             await db.execute("""
                 CREATE TABLE IF NOT EXISTS automod (
                     guild_id INTEGER PRIMARY KEY,
@@ -234,7 +234,7 @@ class Automod(commands.Cog):
 
     async def enable_automod(self, ctx, guild_id, selected_events, interaction):
 
-        async with aiosqlite.connect("db/automod.db") as db:
+        async with connect('automod.db') as db:
             await db.execute("INSERT OR REPLACE INTO automod (guild_id, enabled) VALUES (?, 1)", (guild_id,))
             for event in selected_events:
                 await db.execute("INSERT OR REPLACE INTO automod_punishments (guild_id, event, punishment) VALUES (?, ?, ?)", (guild_id, event, self.default_punishment))
@@ -294,7 +294,7 @@ class Automod(commands.Cog):
                 log_channel = await interaction.guild.create_text_channel("quantum-automod", overwrites=overwrites)
                 guild_id = interaction.guild.id
 
-                async with aiosqlite.connect("db/automod.db") as db:
+                async with connect('automod.db') as db:
                     await db.execute("INSERT OR REPLACE INTO automod_logging (guild_id, log_channel) VALUES (?, ?)", (guild_id, log_channel.id))
                     await db.commit()
 
@@ -435,7 +435,7 @@ class Automod(commands.Cog):
             await ctx.send(view = embed_to_view(embed))
             return
 
-        async with aiosqlite.connect("db/automod.db") as db:
+        async with connect('automod.db') as db:
             cursor = await db.execute("SELECT 1 FROM automod_ignored WHERE guild_id = ? AND type = 'channel' AND id = ?", (guild_id, channel.id))
             if await cursor.fetchone() is not None:
                 embed = discord.Embed(title="__Channel Already Whitelisted!__", description=f"{emojis.DENIED} The channel {channel.mention} is already in the ignore list.\n\n➜ Use **{ctx.prefix}automod unignore channel {channel.mention}** to remove it.", color=0x000000)
@@ -502,7 +502,7 @@ class Automod(commands.Cog):
             await ctx.send(view = embed_to_view(embed))
             return
 
-        async with aiosqlite.connect("db/automod.db") as db:
+        async with connect('automod.db') as db:
             cursor = await db.execute("SELECT 1 FROM automod_ignored WHERE guild_id = ? AND type = 'role' AND id = ?", (guild_id, role.id))
             
             if await cursor.fetchone() is not None:
@@ -571,7 +571,7 @@ class Automod(commands.Cog):
             return
             
 
-        async with aiosqlite.connect("db/automod.db") as db:
+        async with connect('automod.db') as db:
             cursor = await db.execute("SELECT type, id FROM automod_ignored WHERE guild_id = ?", (guild_id,))
             ignored_items = await cursor.fetchall()
 
@@ -635,7 +635,7 @@ class Automod(commands.Cog):
             await ctx.send(view = embed_to_view(embed))
             return
 
-        async with aiosqlite.connect("db/automod.db") as db:
+        async with connect('automod.db') as db:
             await db.execute("DELETE FROM automod_ignored WHERE guild_id = ?", (guild_id,))
             await db.commit()
         embed=discord.Embed(title=f"Automod Settings for {ctx.guild.name}", description=f"** {emojis.TICK} | All ignored channels and roles have been reset!**\n\nTo view current Automod settings use `{ctx.prefix}automod config`", color=0x000000)
@@ -695,7 +695,7 @@ class Automod(commands.Cog):
             except discord.HTTPException:
                 pass
         
-        async with aiosqlite.connect("db/automod.db") as db:
+        async with connect('automod.db') as db:
             result = await db.execute("DELETE FROM automod_ignored WHERE guild_id = ? AND type = 'channel' AND id = ?", (guild_id, channel.id))
             await db.commit()
 
@@ -751,7 +751,7 @@ class Automod(commands.Cog):
                 pass
 
         
-        async with aiosqlite.connect("db/automod.db") as db:
+        async with connect('automod.db') as db:
             result = await db.execute("DELETE FROM automod_ignored WHERE guild_id = ? AND type = 'role' AND id = ?", (guild_id, role.id))
             await db.commit()
 
@@ -813,7 +813,7 @@ class Automod(commands.Cog):
 
         elif view.value:
             
-            async with aiosqlite.connect("db/automod.db") as db:
+            async with connect('automod.db') as db:
                 await db.execute("DELETE FROM automod WHERE guild_id = ?", (guild_id,))
                 await db.execute("DELETE FROM automod_punishments WHERE guild_id = ?", (guild_id,))
                 await db.execute("DELETE FROM automod_ignored WHERE guild_id = ?", (guild_id,))
@@ -889,7 +889,7 @@ class Automod(commands.Cog):
         if await self.is_anti_nsfw_enabled(guild_id):
             embed.add_field(name="Anti NSFW Links", value="Block Message", inline=False)
 
-        async with aiosqlite.connect("db/automod.db") as db:
+        async with connect('automod.db') as db:
             cursor = await db.execute("SELECT log_channel FROM automod_logging WHERE guild_id = ?", (guild_id,))
             log_channel_id = await cursor.fetchone()
 
@@ -928,7 +928,7 @@ class Automod(commands.Cog):
             await ctx.send(view = embed_to_view(embed))
             return
             
-        async with aiosqlite.connect("db/automod.db") as db:
+        async with connect('automod.db') as db:
             await db.execute("INSERT OR REPLACE INTO automod_logging (guild_id, log_channel) VALUES (?, ?)", (guild_id, channel.id))
             await db.commit()
             embed=discord.Embed(title=f"Automod Settings for {ctx.guild.name}", description=f"**{emojis.TICK} | Automoderation Logging channel set to {channel.mention}.**\n\n➜ Use `{ctx.prefix}automod config` to view current Automod settings.", color=0x000000)
@@ -941,7 +941,7 @@ class Automod(commands.Cog):
     async def on_guild_remove(self, guild):
         guild_id = guild.id
 
-        async with aiosqlite.connect("db/automod.db") as db:
+        async with connect('automod.db') as db:
             await db.execute("DELETE FROM automod WHERE guild_id = ?", (guild_id,))
             await db.execute("DELETE FROM automod_punishments WHERE guild_id = ?", (guild_id,))
             await db.execute("DELETE FROM automod_ignored WHERE guild_id = ?", (guild_id,))

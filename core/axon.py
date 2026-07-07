@@ -4,9 +4,9 @@ import discord
 import aiohttp
 import typing
 from typing import List
-import aiosqlite
 from utils.config import OWNER_IDS
 from utils import getConfig, updateConfig
+from utils.database import connect
 from utils.discord_compat import install_neutral_embed_policy
 from utils.migrations import run_startup_migrations
 from .Context import Context
@@ -50,16 +50,23 @@ class axon(commands.AutoShardedBot):
             try:
                 await self.load_extension(extension) 
                 log.info("Loaded extension: %s", extension)
-                print(Fore.BLUE + Style.BRIGHT + f"Loaded extension: {extension}")
+                print(Fore.BLUE + Style.BRIGHT + f"Loaded extension: {extension}", flush=True)
             except Exception as e:
                 log.exception("Failed to load extension %s", extension)
-                print(f"{Fore.RED}{Style.BRIGHT}Failed to load extension {extension}. {e}")
+                print(f"{Fore.RED}{Style.BRIGHT}Failed to load extension {extension}. {e}", flush=True)
                 raise
-        print(Fore.GREEN + Style.BRIGHT + "*" * 20)
+        log.info("All extensions loaded")
+        print(Fore.GREEN + Style.BRIGHT + "*" * 20, flush=True)
 
     async def close(self) -> None:
         if self.session and not self.session.closed:
             await self.session.close()
+            self.session = None
+        try:
+            from db._db import Database
+            await Database().close()
+        except Exception:
+            log.exception("Failed to close shared database connection")
         try:
             await super().close()
         except AttributeError as exc:
@@ -92,31 +99,20 @@ class axon(commands.AutoShardedBot):
             return msg
 
     async def get_prefix(self, message: discord.Message):
+        async with connect("np.db") as db:
+            async with db.execute("SELECT id FROM np WHERE id = ?", (message.author.id,)) as cursor:
+                row = await cursor.fetchone()
+
         if message.guild:
-            guild_id = message.guild.id
-            async with aiosqlite.connect('db/np.db') as db:
-                async with db.execute("SELECT id FROM np WHERE id = ?", (message.author.id,)) as cursor:
-                    row = await cursor.fetchone()
-                    if row:
-                        data = await getConfig(guild_id)
-                        prefix = data["prefix"]
-                        # Np user
-                        return commands.when_mentioned_or(prefix, '')(self, message)
-                    else:
-                        # non np
-                        data = await getConfig(guild_id)
-                        prefix = data["prefix"]
-                        return commands.when_mentioned_or(prefix)(self, message)
-        else:
-            async with aiosqlite.connect('db/np.db') as db:
-                async with db.execute("SELECT id FROM np WHERE id = ?", (message.author.id,)) as cursor:
-                    row = await cursor.fetchone()
-                    if row:
-                        #NO user (Dms)
-                        return commands.when_mentioned_or('>', '')(self, message)
-                    else:
-                        #Non Np user (DMs)
-                        return commands.when_mentioned_or('')(self, message)
+            data = await getConfig(message.guild.id)
+            prefix = data["prefix"]
+            if row:
+                return commands.when_mentioned_or(prefix, "")(self, message)
+            return commands.when_mentioned_or(prefix)(self, message)
+
+        if row:
+            return commands.when_mentioned_or(">", "")(self, message)
+        return commands.when_mentioned_or("")(self, message)
 
 
     async def on_message_edit(self, before, after):

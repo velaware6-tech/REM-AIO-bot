@@ -4,7 +4,6 @@ import datetime
 import os
 import time
 
-import aiosqlite
 import discord
 import psutil
 import wavelink
@@ -16,6 +15,7 @@ from utils.Tools import blacklist_check, ignore_check
 from utils.cv2_compat import embed_to_view
 
 
+from utils.database import connect
 class Stats(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -28,7 +28,7 @@ class Stats(commands.Cog):
 
     async def setup_database(self):
         os.makedirs("db", exist_ok=True)
-        async with aiosqlite.connect("db/stats.db") as db:
+        async with connect('stats.db') as db:
             await db.execute("CREATE TABLE IF NOT EXISTS stats (key TEXT PRIMARY KEY, value INTEGER)")
             await db.commit()
             async with db.execute("SELECT value FROM stats WHERE key = 'total_songs_played'") as cursor:
@@ -39,7 +39,7 @@ class Stats(commands.Cog):
                 await db.commit()
 
     async def update_total_songs_played(self):
-        async with aiosqlite.connect("db/stats.db") as db:
+        async with connect('stats.db') as db:
             await db.execute(
                 "INSERT OR REPLACE INTO stats (key, value) VALUES ('total_songs_played', ?)",
                 (self.total_songs_played,),
@@ -139,7 +139,7 @@ class Stats(commands.Cog):
 
         db_latency = "N/A"
         try:
-            async with aiosqlite.connect("db/afk.db") as db:
+            async with connect('afk.db') as db:
                 start = time.perf_counter()
                 await db.execute("SELECT 1")
                 db_latency = f"{round((time.perf_counter() - start) * 1000, 2)} ms"

@@ -1,13 +1,24 @@
+import datetime
 import json
-from quart import Quart, request
+import logging
+import os
+
 import aiohttp
 import aiosqlite
-import datetime
 import pytz
+from dotenv import load_dotenv
+from quart import Quart, request
 
+load_dotenv()
+
+log = logging.getLogger(__name__)
 app = Quart(__name__)
 
-BOT_TOKEN = "YOUR-BOT-TOKEN"
+BOT_TOKEN = os.getenv("TOKEN", "").strip()
+TOPGG_AUTH = os.getenv("TOPGG_WEBHOOK_AUTH", "").strip()
+TOPGG_VOTE_WEBHOOK = os.getenv("TOPGG_VOTE_WEBHOOK_URL", "").strip()
+TOPGG_BOT_ID = os.getenv("TOPGG_BOT_ID", "1144179659735572640").strip()
+
 
 @app.before_serving
 async def setup_database():
@@ -22,48 +33,58 @@ async def setup_database():
         """)
         await db.commit()
 
-@app.route('/')
-async def index():
-    return {'webhook': 'olympus'}
 
-async def get_user_avatar(user_id):
+@app.route("/")
+async def index():
+    return {"webhook": "rem-aio-topgg", "status": "ok"}
+
+
+@app.route("/health")
+async def health():
+    return {"status": "ok"}, 200
+
+
+async def get_user_avatar(user_id: str) -> str | None:
+    if not BOT_TOKEN:
+        return None
     url = f"https://discord.com/api/v10/users/{user_id}"
     headers = {"Authorization": f"Bot {BOT_TOKEN}"}
 
     async with aiohttp.ClientSession() as session:
         async with session.get(url, headers=headers) as response:
-            if response.status == 200:
-                user_data = await response.json()
-                avatar = user_data.get("avatar")
-                if avatar:
-                    return f"https://cdn.discordapp.com/avatars/{user_id}/{avatar}.png"
-                else:
-                    default_avatar_id = int(user_id) % 5
-                    return f"https://cdn.discordapp.com/embed/avatars/{default_avatar_id}.png"
-            else:
+            if response.status != 200:
                 return None
+            user_data = await response.json()
+            avatar = user_data.get("avatar")
+            if avatar:
+                return f"https://cdn.discordapp.com/avatars/{user_id}/{avatar}.png"
+            default_avatar_id = int(user_id) % 5
+            return f"https://cdn.discordapp.com/embed/avatars/{default_avatar_id}.png"
 
-@app.route('/topgg/', methods=['POST'])
+
+@app.route("/topgg/", methods=["POST"])
 async def topgg():
-    authorization = request.headers.get('Authorization')
-    webhook = 'YOUR-VOTE-POSTER-CHANNEL-WEBHOOK'
+    if not TOPGG_AUTH or not TOPGG_VOTE_WEBHOOK or not BOT_TOKEN:
+        log.error("Top.gg webhook is not fully configured in environment variables.")
+        return {"error": "Webhook not configured"}, 503
 
-    if authorization != 'YOUR-TOPGG-AUTHORIZATION':
-        return {'error': '401 Unauthorized'}, 401
+    authorization = request.headers.get("Authorization")
+    if authorization != TOPGG_AUTH:
+        return {"error": "401 Unauthorized"}, 401
 
     data = json.loads(await request.data)
-    user_id = data['user']
+    user_id = str(data["user"])
     avatar_url = await get_user_avatar(user_id)
 
     if not avatar_url:
-        return {'error': 'Failed to fetch avatar'}, 500
+        return {"error": "Failed to fetch avatar"}, 500
 
-    current_time = datetime.datetime.now()
+    current_time = datetime.datetime.now(datetime.timezone.utc)
 
     async with aiosqlite.connect("votes.db") as db:
         cursor = await db.execute(
             "SELECT total_votes, streak, last_vote_time FROM votes WHERE user_id = ?",
-            (user_id,)
+            (user_id,),
         )
         user_data = await cursor.fetchone()
         await cursor.close()
@@ -72,11 +93,7 @@ async def topgg():
             total_votes, streak, last_vote_time = user_data
             last_vote_time = datetime.datetime.fromisoformat(last_vote_time)
             time_difference = (current_time - last_vote_time).total_seconds()
-
-            if time_difference <= 43200:  
-                streak += 1
-            else:
-                streak = 1
+            streak = streak + 1 if time_difference <= 43200 else 1
         else:
             total_votes = 0
             streak = 1
@@ -91,42 +108,41 @@ async def topgg():
                 streak = excluded.streak,
                 last_vote_time = excluded.last_vote_time
             """,
-            (user_id, total_votes, streak, current_time.isoformat())
+            (user_id, total_votes, streak, current_time.isoformat()),
         )
         await db.commit()
 
     timestamp = (current_time + datetime.timedelta(hours=12)).timestamp()
-
-    india_tz = pytz.timezone('Asia/Kolkata')
-    
-    footer_time_utc = current_time.replace(tzinfo=pytz.utc)
-    footer_time_india = footer_time_utc.astimezone(india_tz)
-    footer_time = footer_time_india.strftime('%d/%m/%Y %I:%M %p')
+    india_tz = pytz.timezone("Asia/Kolkata")
+    footer_time = current_time.astimezone(india_tz).strftime("%d/%m/%Y %I:%M %p")
 
     webhook_data = {
         "username": "REM ALL IN ONE BOT",
-        "content": f"<@{user_id}> voted for <@1144179659735572640>!",
+        "content": f"<@{user_id}> voted for <@{TOPGG_BOT_ID}>!",
         "embeds": [
             {
-                "description": "**[Voted REM ALL IN ONE BOT](https://top.gg/bot/1144179659735572640)**\n💖 Thank you for voting for REM ALL IN ONE BOT on Top.gg, your support means everything to us!\n",
+                "description": (
+                    f"**[Voted REM ALL IN ONE BOT](https://top.gg/bot/{TOPGG_BOT_ID})**\n"
+                    "Thank you for voting on Top.gg!"
+                ),
                 "fields": [
-                    {"name": "⏰ Time left to vote again:", "value": f"<t:{int(timestamp)}:R>\n‎ \n", "inline": True},
-                    {"name": "📊 Total votes:", "value": f"{total_votes}", "inline": True},
-                    {"name": "🏆 Current Streak:", "value": f"{streak}", "inline": True},
+                    {"name": "Time left to vote again:", "value": f"<t:{int(timestamp)}:R>\n", "inline": True},
+                    {"name": "Total votes:", "value": f"{total_votes}", "inline": True},
+                    {"name": "Current Streak:", "value": f"{streak}", "inline": True},
                 ],
                 "footer": {
                     "text": f"Voter ID: {user_id} | REM ALL IN ONE BOT | {footer_time}",
-                    "icon_url": "https://cdn.discordapp.com/icons/699587669059174461/f689b4366447d5a23eda8d0ec749c1ba.png?size=1024"
                 },
-                "thumbnail": {
-                    "url": avatar_url
-                },
-                "color": 0xff0000
+                "thumbnail": {"url": avatar_url},
+                "color": 0xFF0000,
             }
-        ]
+        ],
     }
 
     async with aiohttp.ClientSession() as session:
-        await session.post(webhook, json=webhook_data)
+        async with session.post(TOPGG_VOTE_WEBHOOK, json=webhook_data) as response:
+            if response.status >= 400:
+                log.error("Vote webhook failed with status %s", response.status)
+                return {"error": "Failed to post vote webhook"}, 502
 
     return {"message": "Vote registered successfully!"}

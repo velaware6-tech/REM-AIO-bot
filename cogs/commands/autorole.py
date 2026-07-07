@@ -4,13 +4,13 @@ from utils.components_v2 import success_panel, error_panel, info_panel
 
 import asyncio
 import discord
-import aiosqlite
 import logging
 from discord.ext import commands
 from typing import List, Dict
 from utils.Tools import *
 from utils.config import OWNER_IDS
 
+from utils.database import connect
 logging.basicConfig(
     level=logging.INFO,
     format="\x1b[38;5;197m[\x1b[0m%(asctime)s\x1b[38;5;197m]\x1b[0m -> \x1b[38;5;197m%(message)s\x1b[0m",
@@ -38,7 +38,7 @@ class AutoRole(commands.Cog):
         self.color = 0x000000
 
     async def create_table(self):
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with connect(DATABASE_PATH) as db:
             await db.execute("""
             CREATE TABLE IF NOT EXISTS autorole (
                 guild_id INTEGER PRIMARY KEY,
@@ -49,7 +49,7 @@ class AutoRole(commands.Cog):
             await db.commit()
 
     async def get_autorole(self, guild_id: int) -> Dict[str, List[int]]:
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with connect(DATABASE_PATH) as db:
             async with db.execute("SELECT bots, humans FROM autorole WHERE guild_id = ?", (guild_id,)) as cursor:
                 row = await cursor.fetchone()
                 if row:
@@ -61,7 +61,7 @@ class AutoRole(commands.Cog):
                     return {"bots": [], "humans": []}
 
     async def update_autorole(self, guild_id: int, data: Dict[str, List[int]]):
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with connect(DATABASE_PATH) as db:
             bots = ','.join(map(str, data['bots']))
             humans = ','.join(map(str, data['humans']))
             await db.execute("INSERT OR REPLACE INTO autorole (guild_id, bots, humans) VALUES (?, ?, ?)",
@@ -121,12 +121,12 @@ class AutoRole(commands.Cog):
     @ignore_check()
     @commands.has_permissions(administrator=True)
     async def _autorole_humans_reset(self, ctx):
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with connect(DATABASE_PATH) as db:
             async with db.execute("SELECT humans FROM autorole WHERE guild_id = ?", (ctx.guild.id,)) as cursor:
                 data = await cursor.fetchone()
 
         if data and data[0]:
-            async with aiosqlite.connect(DATABASE_PATH) as db:
+            async with connect(DATABASE_PATH) as db:
                 await db.execute("UPDATE autorole SET humans = ? WHERE guild_id = ?", ('[]', ctx.guild.id))
                 await db.commit()
             await ctx.reply(view=success_panel(
@@ -147,12 +147,12 @@ class AutoRole(commands.Cog):
     @ignore_check()
     @commands.has_permissions(administrator=True)
     async def _autorole_bots_reset(self, ctx):
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with connect(DATABASE_PATH) as db:
             async with db.execute("SELECT bots FROM autorole WHERE guild_id = ?", (ctx.guild.id,)) as cursor:
                 data = await cursor.fetchone()
 
         if data and data[0]:
-            async with aiosqlite.connect(DATABASE_PATH) as db:
+            async with connect(DATABASE_PATH) as db:
                 await db.execute("UPDATE autorole SET bots = ? WHERE guild_id = ?", ('[]', ctx.guild.id))
                 await db.commit()
             await ctx.reply(view=success_panel(
@@ -173,12 +173,12 @@ class AutoRole(commands.Cog):
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def _autorole_reset_all(self, ctx):
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with connect(DATABASE_PATH) as db:
             async with db.execute("SELECT humans, bots FROM autorole WHERE guild_id = ?", (ctx.guild.id,)) as cursor:
                 data = await cursor.fetchone()
 
         if data and (data[0] or data[1]):
-            async with aiosqlite.connect(DATABASE_PATH) as db:
+            async with connect(DATABASE_PATH) as db:
                 await db.execute("UPDATE autorole SET humans = ?, bots = ? WHERE guild_id = ?", ('[]', '[]', ctx.guild.id))
                 await db.commit()
             await ctx.reply(view=success_panel(
@@ -210,7 +210,7 @@ class AutoRole(commands.Cog):
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def _autorole_humans_add(self, ctx, *, role: discord.Role):
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with connect(DATABASE_PATH) as db:
             async with db.execute("SELECT humans FROM autorole WHERE guild_id = ?", (ctx.guild.id,)) as cursor:
                 data = await cursor.fetchone()
 
@@ -228,7 +228,7 @@ class AutoRole(commands.Cog):
                 ))
             else:
                 humans.append(role.id)
-                async with aiosqlite.connect(DATABASE_PATH) as db:
+                async with connect(DATABASE_PATH) as db:
                     await db.execute("UPDATE autorole SET humans = ? WHERE guild_id = ?", (str(humans), ctx.guild.id))
                     await db.commit()
                 await ctx.reply(view=success_panel(
@@ -237,7 +237,7 @@ class AutoRole(commands.Cog):
                 ))
         else:
             humans = [role.id]
-            async with aiosqlite.connect(DATABASE_PATH) as db:
+            async with connect(DATABASE_PATH) as db:
                 await db.execute("INSERT INTO autorole (guild_id, humans, bots) VALUES (?, ?, ?)", (ctx.guild.id, str(humans), '[]'))
                 await db.commit()
             await ctx.reply(view=success_panel(
@@ -253,7 +253,7 @@ class AutoRole(commands.Cog):
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def _autorole_humans_remove(self, ctx, *, role: discord.Role):
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with connect(DATABASE_PATH) as db:
             async with db.execute("SELECT humans FROM autorole WHERE guild_id = ?", (ctx.guild.id,)) as cursor:
                 data = await cursor.fetchone()
 
@@ -266,7 +266,7 @@ class AutoRole(commands.Cog):
                 ))
             else:
                 humans.remove(role.id)
-                async with aiosqlite.connect(DATABASE_PATH) as db:
+                async with connect(DATABASE_PATH) as db:
                     await db.execute("UPDATE autorole SET humans = ? WHERE guild_id = ?", (str(humans), ctx.guild.id))
                     await db.commit()
                 await ctx.reply(view=success_panel(
@@ -298,7 +298,7 @@ class AutoRole(commands.Cog):
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def _autorole_bots_add(self, ctx, *, role: discord.Role):
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with connect(DATABASE_PATH) as db:
             async with db.execute("SELECT bots FROM autorole WHERE guild_id = ?", (ctx.guild.id,)) as cursor:
                 data = await cursor.fetchone()
 
@@ -316,7 +316,7 @@ class AutoRole(commands.Cog):
                 ))
             else:
                 bots.append(role.id)
-                async with aiosqlite.connect(DATABASE_PATH) as db:
+                async with connect(DATABASE_PATH) as db:
                     await db.execute("UPDATE autorole SET bots = ? WHERE guild_id = ?", (str(bots), ctx.guild.id))
                     await db.commit()
                 await ctx.reply(view=success_panel(
@@ -325,7 +325,7 @@ class AutoRole(commands.Cog):
                 ))
         else:
             bots = [role.id]
-            async with aiosqlite.connect(DATABASE_PATH) as db:
+            async with connect(DATABASE_PATH) as db:
                 await db.execute("INSERT INTO autorole (guild_id, humans, bots) VALUES (?, ?, ?)", (ctx.guild.id, '[]', str(bots)))
                 await db.commit()
             await ctx.reply(view=success_panel(
@@ -341,7 +341,7 @@ class AutoRole(commands.Cog):
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def _autorole_bots_remove(self, ctx, *, role: discord.Role):
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with connect(DATABASE_PATH) as db:
             async with db.execute("SELECT bots FROM autorole WHERE guild_id = ?", (ctx.guild.id,)) as cursor:
                 data = await cursor.fetchone()
 
@@ -354,7 +354,7 @@ class AutoRole(commands.Cog):
                 ))
             else:
                 bots.remove(role.id)
-                async with aiosqlite.connect(DATABASE_PATH) as db:
+                async with connect(DATABASE_PATH) as db:
                     await db.execute("UPDATE autorole SET bots = ? WHERE guild_id = ?", (str(bots), ctx.guild.id))
                     await db.commit()
                 await ctx.reply(view=success_panel(

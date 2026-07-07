@@ -11,28 +11,33 @@ from discord.ext import commands
 from random import randint
 from utils.Tools import *
 from core import Cog, axon, Context
-from utils.config import *
 from pathlib import Path
 import json
 from PIL import Image, ImageDraw, ImageOps
 import io
 from utils.cv2_compat import embed_to_view, embeds_to_view
+from utils.config import (
+    GIPHY_TOKEN,
+    GOOGLE_API_KEY,
+    GOOGLE_SEARCH_ENGINE_ID,
+    NAME,
+    OPENWEATHER_API_KEY,
+    RAPIDAPI_HOST,
+    RAPIDAPI_KEY,
+)
 
 
 def RandomColor():
   randcolor = discord.Color(random.randint(0x000000, 0xFFFFFF))
   return randcolor
 
-RAPIDAPI_HOST = "truth-dare.p.rapidapi.com"
-RAPIDAPI_KEY = "1cd7c71534msh2544b357ec07ad8p18fa0bjsn1358eef1f8e9"
-
 class Fun(commands.Cog):
 
   def __init__(self, bot):
     self.bot = bot
-    self.giphy_token = 'y3KcqQTdiS0RYcpNJrWn8hFGglKqX4is'
-    self.google_api_key = 'AIzaSyA022fwm_TOQcYTg1N_ohqqIj_RUFUM9BY'
-    self.search_engine_id = '2166875ec165a6c21' 
+    self.giphy_token = GIPHY_TOKEN
+    self.google_api_key = GOOGLE_API_KEY
+    self.search_engine_id = GOOGLE_SEARCH_ENGINE_ID 
 
 
   async def download_avatar(self, url):
@@ -63,6 +68,8 @@ class Fun(commands.Cog):
 
 
   async def fetch_data(self, endpoint):
+        if not RAPIDAPI_KEY:
+            return None
         async with aiohttp.ClientSession() as session:
             headers = {
                 "X-RapidAPI-Host": RAPIDAPI_HOST,
@@ -135,6 +142,8 @@ class Fun(commands.Cog):
   @ignore_check()
   @commands.cooldown(1, 3, commands.BucketType.user)
   async def image(self, ctx, *, search_query: str):
+        if not self.google_api_key or not self.search_engine_id:
+            return await ctx.reply("Image search is not configured. Set `GOOGLE_API_KEY` and `GOOGLE_SEARCH_ENGINE_ID` in `.env`.")
         if not ctx.channel.is_nsfw():
             await ctx.reply("This command can only be used in NSFW (age-restricted) channels.", ephemeral=True)
             return
@@ -162,7 +171,7 @@ class Fun(commands.Cog):
     embed = discord.Embed(title="About your gayness", color=discord.Color.random())
     responses = random.randrange(1, 150)
     embed.description = f'**{person} is {responses}% Gay** :rainbow:'
-    embed.set_footer(text=f'{response}% is your gayness- {ctx.author.name}')
+    embed.set_footer(text=f'{responses}% is your gayness- {ctx.author.name}')
     await ctx.reply(view = embed_to_view(embed))
 
 
@@ -254,6 +263,8 @@ class Fun(commands.Cog):
   @ignore_check()
   @commands.cooldown(1, 5, commands.BucketType.user)
   async def gif(self, ctx, *, search_query: str):
+      if not self.giphy_token:
+          return await ctx.reply("GIF search is not configured. Set `GIPHY_TOKEN` in `.env`.")
       async with aiohttp.ClientSession() as session:
           async with session.get(f"https://api.giphy.com/v1/gifs/search?api_key={self.giphy_token}&q={search_query}&limit=10") as response:
               data = await response.json()
@@ -366,7 +377,9 @@ class Fun(commands.Cog):
   @ignore_check()
   @commands.cooldown(1, 3, commands.BucketType.user)
   async def weather(self, ctx, *, city: str):
-      api_key = "b81e2218c328686836ab6d9d31ce97d0"
+      if not OPENWEATHER_API_KEY:
+          return await ctx.send("Weather is not configured. Set `OPENWEATHER_API_KEY` in `.env`.")
+      api_key = OPENWEATHER_API_KEY
       base_url = "http://api.openweathermap.org/data/2.5/weather?"
       city_name = city
       complete_url = f"{base_url}q={city_name}&APPID={api_key}"

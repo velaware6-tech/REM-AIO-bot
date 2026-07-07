@@ -1,3 +1,4 @@
+from utils.database import connect
 from utils import emojis
 
 import os 
@@ -856,7 +857,7 @@ class Extra(commands.Cog):
     
     db_latency = None
     try:
-      async with aiosqlite.connect("db/afk.db") as db:
+      async with connect('afk.db') as db:
         start_time = time.perf_counter()
         await db.execute("SELECT 1")
         end_time = time.perf_counter()

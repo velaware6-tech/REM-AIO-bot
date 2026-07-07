@@ -17,7 +17,6 @@ from utils.Tools import *
 from utils.cv2_compat import embed_to_view, embeds_to_view
 
 color = 0x185fe5
-client = axon()
 
 class HelpCommand(commands.HelpCommand):
 

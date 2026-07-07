@@ -1,7 +1,7 @@
+from utils.database import connect
 import discord
 from discord.ext import commands
 from datetime import timedelta, datetime
-import aiosqlite
 import asyncio
 
 class AntiSticker(commands.Cog):
@@ -34,7 +34,7 @@ class AntiSticker(commands.Cog):
         else:
             action = discord.AuditLogAction.sticker_update
 
-        async with aiosqlite.connect('db/anti.db') as db:
+        async with connect('anti.db') as db:
             async with db.execute("SELECT status FROM antinuke WHERE guild_id = ?", (guild.id,)) as cursor:
                 antinuke_status = await cursor.fetchone()
 

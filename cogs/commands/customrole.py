@@ -1,10 +1,10 @@
+from utils.database import connect
 from utils import emojis
 
 import discord
 from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import Context
-import aiosqlite
 import asyncio
 from utils.Tools import *
 from typing import List, Tuple
@@ -64,7 +64,7 @@ class Customrole(commands.Cog):
     
 
     async def handle_role_command(self, context: Context, member: discord.Member, role_type: str):
-        async with aiosqlite.connect('db/customrole.db') as db:
+        async with connect('customrole.db') as db:
             async with db.execute(f"SELECT reqrole, {role_type} FROM roles WHERE guild_id = ?", (context.guild.id,)) as cursor:
                 data = await cursor.fetchone()
                 if data:
@@ -111,7 +111,7 @@ class Customrole(commands.Cog):
 
 
     async def create_tables(self):
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with connect(DATABASE_PATH) as db:
             await db.execute('''
                 CREATE TABLE IF NOT EXISTS roles (
                     guild_id INTEGER PRIMARY KEY,
@@ -147,7 +147,7 @@ class Customrole(commands.Cog):
             context.command.reset_cooldown(context)
 
     async def fetch_role_data(self, guild_id):
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with connect(DATABASE_PATH) as db:
             async with db.execute("SELECT staff, girl, vip, guest, frnd, reqrole FROM roles WHERE guild_id = ?", (guild_id,)) as cursor:
                 return await cursor.fetchone()
 
@@ -156,7 +156,7 @@ class Customrole(commands.Cog):
 
     async def update_role_data(self, guild_id, column, value):
         try:
-            async with aiosqlite.connect(DATABASE_PATH) as db:
+            async with connect(DATABASE_PATH) as db:
                 await db.execute(f"INSERT OR REPLACE INTO roles (guild_id, {column}) VALUES (?, ?) ON CONFLICT(guild_id) DO UPDATE SET {column} = ?",
                                  (guild_id, value, value))
                 await db.commit()
@@ -165,7 +165,7 @@ class Customrole(commands.Cog):
             
 
     async def fetch_custom_role_data(self, guild_id):
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with connect(DATABASE_PATH) as db:
             async with db.execute("SELECT name, role_id FROM custom_roles WHERE guild_id = ?", (guild_id,)) as cursor:
                 return await cursor.fetchall()
 
@@ -345,7 +345,7 @@ class Customrole(commands.Cog):
     @commands.has_permissions(administrator=True)
     @app_commands.describe(name="Command name", role="Role to be assigned")
     async def create(self, context: Context, name: str, role: discord.Role) -> None:
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with connect(DATABASE_PATH) as db:
             async with db.execute("SELECT COUNT(*) FROM custom_roles WHERE guild_id = ?", (context.guild.id,)) as cursor:
                 count = await cursor.fetchone()
                 if count[0] >= 56:
@@ -386,7 +386,7 @@ class Customrole(commands.Cog):
     @commands.has_permissions(administrator=True)
     @app_commands.describe(name="Command name to be deleted")
     async def delete(self, context: Context, name: str) -> None:
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with connect(DATABASE_PATH) as db:
             async with db.execute("SELECT name FROM custom_roles WHERE guild_id = ? AND name = ?", (context.guild.id, name)) as cursor:
                 existing_role = await cursor.fetchone()
 
@@ -398,7 +398,7 @@ class Customrole(commands.Cog):
             await context.reply(view = embed_to_view(embed))
             return
 
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with connect(DATABASE_PATH) as db:
             await db.execute("DELETE FROM custom_roles WHERE guild_id = ? AND name = ?", (context.guild.id, name))
             await db.commit()
 
@@ -474,7 +474,7 @@ class Customrole(commands.Cog):
                             removed_roles.append(f"**{role_name.capitalize()}:** {role.mention}")
                             await self.update_role_data(context.guild.id, role_name, None)
                             
-                async with aiosqlite.connect(DATABASE_PATH) as db:
+                async with connect(DATABASE_PATH) as db:
                     await db.execute("DELETE FROM custom_roles WHERE guild_id = ?", (context.guild.id,))
                     await db.commit()
                     embed = discord.Embed(
@@ -523,7 +523,7 @@ class Customrole(commands.Cog):
         guild_id = message.guild.id
 
         
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with connect(DATABASE_PATH) as db:
             async with db.execute("SELECT role_id FROM custom_roles WHERE guild_id = ? AND name = ?", (guild_id, command_name)) as cursor:
                 result = await cursor.fetchone()
 
@@ -532,7 +532,7 @@ class Customrole(commands.Cog):
             role = message.guild.get_role(role_id)
 
             
-            async with aiosqlite.connect(DATABASE_PATH) as db:
+            async with connect(DATABASE_PATH) as db:
                 async with db.execute("SELECT reqrole FROM roles WHERE guild_id = ?", (guild_id,)) as cursor:
                     reqrole_result = await cursor.fetchone()
 

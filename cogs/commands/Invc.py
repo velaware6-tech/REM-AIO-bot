@@ -1,8 +1,8 @@
+from utils.database import connect
 from utils import emojis
 
 import discord
 from discord.ext import commands
-import aiosqlite
 import asyncio
 from utils.Tools import *
 from utils.cv2_compat import embed_to_view, embeds_to_view
@@ -14,7 +14,7 @@ class Invcrole(commands.Cog):
         asyncio.create_task(self.create_table())
 
     async def create_table(self):
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             await db.execute('''
                 CREATE TABLE IF NOT EXISTS vcroles (
                     guild_id INTEGER PRIMARY KEY,
@@ -37,7 +37,7 @@ class Invcrole(commands.Cog):
     @ignore_check()
     @commands.has_permissions(administrator=True)
     async def add(self, ctx, role: discord.Role):
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             async with db.execute('SELECT role_id FROM vcroles WHERE guild_id = ?', (ctx.guild.id,)) as cursor:
                 row = await cursor.fetchone()
                 if row:
@@ -56,7 +56,7 @@ class Invcrole(commands.Cog):
     @ignore_check()
     @commands.has_permissions(administrator=True)
     async def remove(self, ctx, role: discord.Role):
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             async with db.execute('SELECT role_id FROM vcroles WHERE guild_id = ? AND role_id = ?', (ctx.guild.id, role.id)) as cursor:
                 row = await cursor.fetchone()
                 if not row:
@@ -75,7 +75,7 @@ class Invcrole(commands.Cog):
     @ignore_check()
     @commands.has_permissions(administrator=True)
     async def config(self, ctx):
-        async with aiosqlite.connect(self.db_path) as db:
+        async with connect(self.db_path) as db:
             async with db.execute('SELECT role_id FROM vcroles WHERE guild_id = ?', (ctx.guild.id,)) as cursor:
                 row = await cursor.fetchone()
                 if not row:
@@ -92,7 +92,7 @@ class Invcrole(commands.Cog):
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         try:
-            async with aiosqlite.connect(self.db_path) as db:
+            async with connect(self.db_path) as db:
                 async with db.execute('SELECT role_id FROM vcroles WHERE guild_id = ?', (member.guild.id,)) as cursor:
                     row = await cursor.fetchone()
                     if not row:
