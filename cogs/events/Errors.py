@@ -4,14 +4,14 @@ import logging
 from discord.ext import commands
 from discord import app_commands
 from utils.config import serverLink
-from core import axon, Cog, Context
+from core import Rem, Cog, Context
 from utils.Tools import get_ignore_data
 from utils.cv2_compat import embed_to_view, embeds_to_view
 
 log = logging.getLogger(__name__)
 
 class Errors(Cog):
-  def __init__(self, client: axon):
+  def __init__(self, client: Rem):
     self.client = client
 
   @commands.Cog.listener()

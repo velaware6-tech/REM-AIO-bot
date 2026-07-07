@@ -4,147 +4,167 @@
 
 # REM ALL IN ONE BOT
 
-REM ALL IN ONE BOT is a modified version of Axon X. It is an all-in-one Discord bot focused on clean panels, moderation, server security, music, tickets, giveaways, utilities, games, welcome systems, logging, and server management.
+All-in-one Discord bot for moderation, security, music, tickets, giveaways, utilities, games, welcome systems, logging, and server management — with clean Components V2 panels.
+
+## Quick Start
+
+```bash
+pip install -r requirements.txt
+copy .env.example .env
+python rem.py
+```
+
+Set `TOKEN` and `OWNER_IDS` in `.env` before starting.
 
 ## Features
 
-- Components V2 styled help, utility, and music panels
-- Lavalink/Wavelink music playback with player controls
-- Moderation commands for bans, kicks, timeouts, warnings, locks, hides, roles, purges, and snipes
-- Antinuke protection for dangerous server changes
-- Automod protection for spam, caps, links, invites, mass mentions, and emoji spam
-- Ticket panels, giveaways, logging, welcome/greet, autorole, autoreact, and custom roles
-- Utility commands such as stats, botinfo, profile, invite, serverinfo, userinfo, ping, uptime, AFK, translate, QR, and emoji tools
-- Games and fun commands including chess, RPS, tic-tac-toe, Wordle, 2048, blackjack, slots, and more
-- Owner/staff controls for no-prefix, global actions, reloads, and bot administration
+| Area | Highlights |
+| --- | --- |
+| **Panels** | Components V2 help, utility, and music UIs |
+| **Music** | Lavalink / Wavelink playback with player controls |
+| **Moderation** | Ban, kick, timeout, warn, lock, hide, role, purge, snipe |
+| **Security** | Antinuke listeners + automod (spam, caps, links, invites) |
+| **Server** | Tickets, giveaways, logging, welcome, autorole, custom roles |
+| **Utility** | Stats, botinfo, AFK, translate, QR, emoji sync, maps |
+| **Games** | Chess, RPS, Wordle, 2048, blackjack, slots, and more |
+| **Admin** | No-prefix, global actions, owner tools, emergency controls |
 
 ## Requirements
 
-- Python 3.11 or newer
-- A Discord bot application and token
-- Message Content intent enabled in the Discord Developer Portal
-- Server Members intent enabled if you use moderation, welcome, autorole, AFK mention tracking, or antinuke features
-- A Lavalink node for music commands
+- Python **3.11+**
+- Discord bot token with **Message Content** intent
+- **Server Members** intent (moderation, welcome, autorole, antinuke)
+- **Lavalink** node for music (optional but recommended)
 
 ## Installation
 
-Clone or open the project folder, then install the Python dependencies:
+1. Install dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Create your local environment file:
+2. Create your environment file:
 
 ```bash
 copy .env.example .env
 ```
 
-Fill `.env` with your real values. Keep this file private.
+3. Fill in `.env` (never commit this file):
 
 ```env
 TOKEN=your_discord_bot_token
 BOT_NAME=REM ALL IN ONE BOT
 OWNER_IDS=123456789012345678
-BYPASS_IDS=123456789012345678
-COMMAND_LOG_IGNORE_IDS=123456789012345678
-
 LAVALINK_ENABLED=true
-LAVALINK_IDENTIFIER=main
 LAVALINK_URI=http://127.0.0.1:2333
 LAVALINK_PASSWORD=youshallnotpass
-LAVALINK_SECURE=false
 ```
 
-Start the bot:
+4. Run the bot:
 
 ```bash
 python rem.py
 ```
 
+On startup you should see the REM console banner, cog load lines, shard connections, and a ready summary.
+
 ## Environment
 
-Important `.env` values:
+| Key | Required | Purpose |
+| --- | --- | --- |
+| `TOKEN` | Yes | Discord bot token |
+| `OWNER_IDS` | Yes | Comma-separated owner user IDs |
+| `BOT_NAME` | No | Display name in panels (default: REM ALL IN ONE BOT) |
+| `BYPASS_IDS` | No | Users that bypass security checks (defaults to owners) |
+| `COMMAND_LOG_WEBHOOK_URL` | No | Webhook for command usage logs |
+| `LAVALINK_URI` / `LAVALINK_PASSWORD` | For music | Lavalink node connection |
+| `GUILD_JOIN_LOG_CHANNEL_ID` | No | Channel ID for guild join logs |
+| `GUILD_LEAVE_LOG_CHANNEL_ID` | No | Channel ID for guild leave logs |
+| `OPENAI_API_KEY` | No | Optional AI/chat features |
+| `SPOTIFY_CLIENT_ID` / `SECRET` | No | Optional Spotify link resolution |
+| `GIPHY_TOKEN`, `PEXELS_API_KEY`, etc. | No | Optional fun/utility API keys |
 
-| Key | Purpose |
-| --- | --- |
-| `TOKEN` | Discord bot token. Required. |
-| `BOT_NAME` | Display name used by bot panels and config helpers. |
-| `OWNER_IDS` | Comma-separated Discord user IDs with owner-level access. |
-| `BYPASS_IDS` | Comma-separated user IDs allowed through production security checks. Usually owners. |
-| `COMMAND_LOG_IGNORE_IDS` | Users ignored by command logging. |
-| `SUPPORT_SERVER` | Invite/support link used in panels. |
-| `COMMAND_LOG_WEBHOOK_URL` | Optional webhook for command logs. |
-| `LAVALINK_URI` | Lavalink node URL, for example `http://host:2333`. |
-| `LAVALINK_PASSWORD` | Lavalink node password. |
-| `OPENAI_API_KEY` | Optional AI/chat key for AI features. |
-
-Use `.env.example` as the full reference. Do not commit `.env`, tokens, passwords, local databases, logs, or generated runtime files.
+See `.env.example` for the full list.
 
 ## Permissions
 
-For normal operation, invite the bot with these permissions:
+Invite the bot with **Administrator**, or configure these permissions manually:
 
-- Administrator, or a carefully configured role with the permissions below
-- Manage Server, Manage Roles, Manage Channels, Manage Messages
-- Ban Members, Kick Members, Moderate Members
-- View Audit Log
+- Manage Server, Roles, Channels, Messages
+- Ban / Kick / Moderate Members, View Audit Log
 - Send Messages, Embed Links, Attach Files, Use External Emojis
-- Connect, Speak, Use Voice Activity for music
+- Connect, Speak (for music)
 
-Sensitive setup commands are restricted to owners, bypass users, server owners, administrators, or members with the correct Discord permissions depending on the command. Ticket panels, giveaways, automod, security setup, antinuke, emergency, and similar server-control commands should not be available to normal members.
+Setup commands (antinuke, automod, tickets, emergency, etc.) are restricted to owners, bypass users, server owners, or administrators.
 
 ## Music
 
-Music requires Lavalink. Configure the node in `.env`:
+Configure Lavalink in `.env`:
 
 ```env
 LAVALINK_ENABLED=true
 LAVALINK_IDENTIFIER=main
-LAVALINK_URI=http://your-lavalink-host:2333
-LAVALINK_PASSWORD=your_lavalink_password
+LAVALINK_URI=http://your-host:2333
+LAVALINK_PASSWORD=your_password
 LAVALINK_PRECHECK=true
 ```
 
-If the music panel or controls do not update after code changes, fully restart the running `python rem.py` process. Hot-saving files will not update an already running bot process.
+Restart `python rem.py` fully after music or code changes — hot reload will not update a running process.
 
 ## Project Layout
 
 ```text
-rem.py                 Bot entrypoint
-cogs/commands/         Main command cogs
-cogs/moderation/       Moderation commands
-cogs/antinuke/         Antinuke listeners
-cogs/automod/          Automod listeners
-cogs/events/           Bot event listeners
-core/                  Bot class and startup helpers
-utils/                 Config, checks, UI helpers, and shared utilities
-data/                  Runtime assets and local bot data
-db/                    Runtime database helpers/state
+rem.py              Entry point
+core/rem.py         Rem bot class (AutoShardedBot)
+core/Context.py     Custom command context
+cogs/commands/      User-facing command cogs
+cogs/rem/           Help category panel cogs
+cogs/moderation/    Moderation action cogs
+cogs/antinuke/      Antinuke event listeners
+cogs/automod/       Automod event listeners
+cogs/events/        Guild & error event listeners
+utils/              Config, database, console, UI helpers
+db/                 Per-feature SQLite databases
+data/               Runtime assets and generated media
+games/              Standalone game engines
 ```
 
-## Development Checks
+## Development
 
-Run a quick syntax check after edits:
+Syntax check:
 
 ```bash
 python -m compileall rem.py cogs utils core
 ```
 
-Check the current Git changes:
+Health endpoint (when keep-alive is enabled):
 
-```bash
-git status --short
+```text
+GET http://127.0.0.1:8080/health
 ```
 
-## Security Notes
+## Security
 
-- Regenerate the bot token immediately if it is ever posted in chat, screenshots, logs, or commits.
-- Keep `.env` local only.
-- Do not commit `.db`, `.sqlite`, log, cache, or generated media files.
-- Keep owner and bypass IDs limited to trusted users.
-- Restart the bot after permission, security, music, or environment changes.
+- Regenerate your bot token if it is ever exposed.
+- Keep `.env`, databases, and logs out of git.
+- Limit `OWNER_IDS` and `BYPASS_IDS` to trusted users.
+- Restart after permission, security, or environment changes.
+
+## Logs
+
+Console output uses the REM anime-style logger. Full debug logs are also written to:
+
+```text
+logs/rem.log
+```
+
+## License
+
+MIT License — Copyright (c) 2026 **devrock**
+
+See [LICENSE](LICENSE) for full terms.
 
 ## Credits
 
-REM ALL IN ONE BOT is a modified version of Axon X. Original project lineage includes Axon X and Olympus bot components.
+**REM ALL IN ONE BOT** — created by **devrock**

@@ -1,7 +1,7 @@
 from utils import emojis
 
 from discord.ext import commands
-from core import axon, Cog
+from core import Rem, Cog
 import discord
 import logging
 from discord.ui import View, Button
@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 
 class Guild(Cog):
-    def __init__(self, client: axon):
+    def __init__(self, client: Rem):
         self.client = client
 
     @commands.Cog.listener()

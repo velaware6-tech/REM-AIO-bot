@@ -4,7 +4,7 @@ from discord import app_commands, Interaction
 from difflib import get_close_matches
 from contextlib import suppress
 from core import Context
-from core.axon import axon
+from core.rem import Rem
 from core.Cog import Cog
 from utils.Tools import getConfig
 from itertools import chain
@@ -205,7 +205,7 @@ class HelpCommand(commands.HelpCommand):
 
 class Help(Cog, name="help"):
 
-  def __init__(self, client: axon):
+  def __init__(self, client: Rem):
     self._original_help_command = client.help_command
     attributes = {
       'name': "help",

@@ -8,6 +8,7 @@ import asyncio
 import logging
 import os
 import signal
+import sys
 import traceback
 from threading import Thread
 
@@ -16,19 +17,24 @@ import discord
 from discord.ext import commands
 from flask import Flask
 
-from core.axon import axon
-from utils.config import COMMAND_LOG_IGNORE_IDS, COMMAND_LOG_WEBHOOK_URL, ENABLE_KEEP_ALIVE, LOG_LEVEL, PORT, TOKEN
+from core.rem import Rem
+from utils.config import COMMAND_LOG_IGNORE_IDS, COMMAND_LOG_WEBHOOK_URL, ENABLE_KEEP_ALIVE, LOG_LEVEL, NAME, PORT, TOKEN
+from utils import console
 from utils.startup import StartupError, validate_startup_config
 
-logging.basicConfig(
-    level=LOG_LEVEL,
-    format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
-)
+console.setup_console_logging(LOG_LEVEL)
 log = logging.getLogger("rem")
 
-client = axon()
+client = Rem()
 app = Flask(__name__)
-_shutdown_requested = False
+
+_shutdown_lock = asyncio.Lock()
+_shutdown_done = False
+_loop: asyncio.AbstractEventLoop | None = None
+_bot_task: asyncio.Task | None = None
+_shutdown_task: asyncio.Task | None = None
+_interrupt_count = 0
+_interrupt_at = 0.0
 
 os.environ["JISHAKU_NO_DM_TRACEBACK"] = "False"
 os.environ["JISHAKU_HIDE"] = "True"
@@ -37,21 +43,33 @@ os.environ["JISHAKU_FORCE_PAGINATOR"] = "True"
 
 
 @client.event
+async def on_shard_connect(shard_id: int):
+    console.shard_connected(shard_id)
+
+
+@client.event
 async def on_ready():
     await client.wait_until_ready()
 
-    log.info("Loaded and online as %s", client.user)
-    log.info("Connected to %s guilds and %s cached users", len(client.guilds), len(client.users))
+    prefix_count = len(client.commands)
+    slash_count = 0
 
-    if client._synced_app_commands:
-        return
+    if not client._synced_app_commands:
+        try:
+            synced = await client.tree.sync()
+            client._synced_app_commands = True
+            slash_count = len(synced)
+        except Exception:
+            log.exception("Slash command sync failed")
 
-    try:
-        synced = await client.tree.sync()
-        client._synced_app_commands = True
-        log.info("Synced %s prefix commands and %s slash commands", len(client.commands), len(synced))
-    except Exception:
-        log.exception("Slash command sync failed")
+    console.ready(
+        str(client.user),
+        guilds=len(client.guilds),
+        users=len(client.users),
+        prefix_commands=prefix_count,
+        slash_commands=slash_count,
+    )
+    log.info("Online as %s (%s guilds, %s users)", client.user, len(client.guilds), len(client.users))
 
 
 @client.event
@@ -97,51 +115,150 @@ def health():
 
 
 def run_keep_alive():
+    import logging as _logging
+    _logging.getLogger("werkzeug").setLevel(_logging.ERROR)
     app.run(host="0.0.0.0", port=PORT, use_reloader=False)
 
 
 def keep_alive():
     if not ENABLE_KEEP_ALIVE:
         return
-    server = Thread(target=run_keep_alive, daemon=True)
+    server = Thread(target=run_keep_alive, daemon=True, name="rem-keepalive")
     server.start()
 
 
-def _request_shutdown() -> None:
-    global _shutdown_requested
-    if _shutdown_requested:
+async def graceful_shutdown(*, reason: str = "signal") -> None:
+    global _shutdown_done
+
+    async with _shutdown_lock:
+        if _shutdown_done:
+            return
+        _shutdown_done = True
+
+    console.goodbye()
+    log.info("Shutting down (%s)...", reason)
+
+    if _bot_task is not None and not _bot_task.done():
+        _bot_task.cancel()
+        try:
+            await asyncio.wait_for(_bot_task, timeout=8.0)
+        except (asyncio.CancelledError, asyncio.TimeoutError):
+            pass
+        except Exception:
+            log.exception("Error while stopping bot task")
+
+    try:
+        if not client.is_closed():
+            await asyncio.wait_for(client.close(), timeout=10.0)
+    except asyncio.TimeoutError:
+        log.warning("Discord client close timed out")
+    except Exception:
+        log.exception("Error while closing Discord client")
+
+    await asyncio.sleep(0.25)
+
+
+def _schedule_shutdown(reason: str = "Ctrl+C") -> None:
+    global _shutdown_task
+
+    if _loop is None or not _loop.is_running():
         return
-    _shutdown_requested = True
-    log.info("Shutdown requested — closing bot connection...")
-    asyncio.create_task(client.close())
+
+    def _start_shutdown() -> None:
+        global _shutdown_task
+        if _shutdown_task is None or _shutdown_task.done():
+            _shutdown_task = asyncio.create_task(
+                graceful_shutdown(reason=reason),
+                name="rem-shutdown",
+            )
+
+    _loop.call_soon_threadsafe(_start_shutdown)
+
+
+async def _wait_for_shutdown() -> None:
+    if _shutdown_task is not None:
+        await _shutdown_task
+    elif not _shutdown_done:
+        await graceful_shutdown(reason="cleanup")
 
 
 def _register_signal_handlers(loop: asyncio.AbstractEventLoop) -> None:
+    def _handler() -> None:
+        _schedule_shutdown("signal")
+
     for sig in (signal.SIGINT, signal.SIGTERM):
         try:
-            loop.add_signal_handler(sig, _request_shutdown)
-        except (NotImplementedError, RuntimeError):
-            pass
+            loop.add_signal_handler(sig, _handler)
+            return
+        except (NotImplementedError, RuntimeError, AttributeError):
+            continue
+
+    def _win_handler(signum, frame) -> None:
+        global _interrupt_count, _interrupt_at
+        import time
+
+        now = time.monotonic()
+        if now - _interrupt_at > 2.0:
+            _interrupt_count = 0
+        _interrupt_at = now
+        _interrupt_count += 1
+
+        if _interrupt_count >= 2:
+            console.warn("Force stopping REM...")
+            os._exit(0)
+
+        console.warn("Interrupted — shutting down... (Ctrl+C again to force)")
+        _schedule_shutdown("Ctrl+C")
+
+    signal.signal(signal.SIGINT, _win_handler)
+    if hasattr(signal, "SIGTERM"):
+        signal.signal(signal.SIGTERM, _win_handler)
+
+
+async def _run_bot() -> None:
+    await client.load_extension("jishaku")
+    await client.start(TOKEN)
 
 
 async def main():
+    global _loop, _bot_task
+    _loop = asyncio.get_running_loop()
+
+    console.print_banner(NAME)
+    console.section("Boot sequence")
+
     try:
-        validate_startup_config()
+        warnings = validate_startup_config()
+        for warning in warnings:
+            console.warn(warning)
+        console.info("Environment validated")
     except StartupError as exc:
-        log.error("%s", exc)
+        console.error(str(exc))
         raise SystemExit(1) from exc
 
-    keep_alive()
-    loop = asyncio.get_running_loop()
-    _register_signal_handlers(loop)
+    if ENABLE_KEEP_ALIVE:
+        keep_alive()
+        console.info(f"Keep-alive server listening on port {PORT}")
+    else:
+        console.info("Keep-alive server disabled")
 
-    async with client:
-        await client.load_extension("jishaku")
-        await client.start(TOKEN)
+    _register_signal_handlers(_loop)
+
+    _bot_task = asyncio.create_task(_run_bot(), name="rem-bot")
+
+    try:
+        await _bot_task
+    except asyncio.CancelledError:
+        pass
+    finally:
+        await _wait_for_shutdown()
 
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        log.info("Interrupted — bot stopped.")
+        pass
+    finally:
+        console.info("REM stopped cleanly.")
+        sys.exit(0)

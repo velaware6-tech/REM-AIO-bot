@@ -10,7 +10,7 @@ log = logging.getLogger(__name__)
 
 def install_neutral_embed_policy() -> None:
     """Keep legacy embed code rendering without accent/embed colors."""
-    if getattr(discord.Embed, "_axon_neutral_policy", False):
+    if getattr(discord.Embed, "_rem_neutral_policy", False):
         return
 
     original_init = discord.Embed.__init__
@@ -31,5 +31,5 @@ def install_neutral_embed_policy() -> None:
     discord.Embed.__init__ = neutral_init
     discord.Embed.colour = property(get_neutral_colour, set_neutral_colour)
     discord.Embed.color = discord.Embed.colour
-    discord.Embed._axon_neutral_policy = True
+    discord.Embed._rem_neutral_policy = True
     log.debug("Installed neutral embed color policy.")

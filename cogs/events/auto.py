@@ -2,7 +2,7 @@ from utils import emojis
 
 import discord
 from discord.utils import *
-from core import axon, Cog
+from core import Rem, Cog
 from utils.Tools import *
 from utils.config import BotName, serverLink
 from discord.ext import commands
@@ -10,7 +10,7 @@ from discord.ui import Button, View
 from utils.cv2_compat import embed_to_view, embeds_to_view
 
 class Autorole(Cog):
-    def __init__(self, bot: axon):
+    def __init__(self, bot: Rem):
        self.bot = bot
 
 

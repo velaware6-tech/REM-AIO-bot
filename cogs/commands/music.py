@@ -10,7 +10,7 @@ from discord.ui import Button, View
 import wavelink
 from wavelink.enums import TrackSource
 from utils import Paginator, DescriptionEmbedPaginator
-from core import Cog, axon, Context
+from core import Cog, Rem, Context
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 import io
 import aiohttp
@@ -320,7 +320,7 @@ class MusicPlayerLayoutView(discord.ui.LayoutView):
 
 
 class Music(commands.Cog):
-    def __init__(self, client: axon):
+    def __init__(self, client: Rem):
         self.client = client
         self.lavalink_connected = False
         self.lavalink_nodes = self._load_lavalink_nodes()

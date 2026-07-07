@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 import os
-from core import Cog, axon, Context
+from core import Cog, Rem, Context
 import games as games
 from utils.Tools import *
 from games import button_games as btn
@@ -13,7 +13,7 @@ import asyncio
 class Games(Cog):
     """REM ALL IN ONE BOT Games"""
 
-    def __init__(self, client: axon):
+    def __init__(self, client: Rem):
         self.client = client
 
 

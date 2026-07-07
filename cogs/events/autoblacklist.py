@@ -2,14 +2,14 @@ from utils.database import connect
 from utils import emojis
 
 import discord
-from core import axon, Cog
+from core import Rem, Cog
 from discord.ext import commands
 import aiosqlite
 from datetime import datetime, timedelta
 from utils.cv2_compat import embed_to_view, embeds_to_view
 
 class AutoBlacklist(Cog):
-    def __init__(self, client: axon):
+    def __init__(self, client: Rem):
         self.client = client
         self.spam_cd_mapping = commands.CooldownMapping.from_cooldown(5, 5, commands.BucketType.member)
         self.spam_command_mapping = commands.CooldownMapping.from_cooldown(6, 10, commands.BucketType.member)

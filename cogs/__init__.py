@@ -1,6 +1,6 @@
 from __future__ import annotations
-from core import axon
-from colorama import Fore, Style, init
+from core import Rem
+from utils import console
 import logging
 
 
@@ -75,24 +75,24 @@ from .events.autoreact import AutoReactListener
 #from .events.topgg import TopGG
 
 ########-------HELP-------########
-from .axon.antinuke import _antinuke
-from .axon.extra import _extra
-from .axon.general import _general
-from .axon.automod import _automod 
-from .axon.moderation import _moderation
-from .axon.music import _music
-from .axon.fun import _fun
-from .axon.games import _games
-from .axon.ignore import _ignore
-from .axon.server import _server
-from .axon.voice import _voice 
-from .axon.welcome import _welcome 
-from .axon.giveaway import _giveaway
-from .axon.ticket import _ticket
-#from .axon.vanityroles import Vanityroles69999
-from .axon.logging import Loggingdrop
-from .axon.vanity import _vanity
-from .axon.inviteTracker import _inviteTracker
+from .rem.antinuke import _antinuke
+from .rem.extra import _extra
+from .rem.general import _general
+from .rem.automod import _automod 
+from .rem.moderation import _moderation
+from .rem.music import _music
+from .rem.fun import _fun
+from .rem.games import _games
+from .rem.ignore import _ignore
+from .rem.server import _server
+from .rem.voice import _voice 
+from .rem.welcome import _welcome 
+from .rem.giveaway import _giveaway
+from .rem.ticket import _ticket
+#from .rem.vanityroles import Vanityroles69999
+from .rem.logging import Loggingdrop
+from .rem.vanity import _vanity
+from .rem.inviteTracker import _inviteTracker
 
 
 #########ANTINUKE#########
@@ -173,20 +173,25 @@ COGS_TO_LOAD = [
 ]
 
 
-async def setup(bot: axon):
+async def setup(bot: Rem):
     loaded_names: set[str] = set()
+    timer = console.LoadTimer("COGS")
+    total = len(COGS_TO_LOAD)
+    console.section(f"Loading cogs ({total})")
+    loaded_count = 0
 
     for cog_cls in COGS_TO_LOAD:
         cog = cog_cls(bot)
         name = cog.qualified_name
         if name in loaded_names or bot.get_cog(name):
             log.warning("Skipping duplicate cog: %s", name)
+            console.warn(f"Skipped duplicate cog: {name}")
             continue
 
         await bot.add_cog(cog)
         loaded_names.add(name)
-        log.info("Loaded cog: %s", name)
-        print(Fore.BLUE + Style.BRIGHT + f"Loaded cog: {name}", flush=True)
+        loaded_count += 1
+        console.cog_progress(name, index=loaded_count, total=total)
+        log.debug("Loaded cog: %s", name)
 
-    log.info("All REM cogs loaded successfully")
-    print(Fore.BLUE + Style.BRIGHT + "All REM cogs loaded successfully.", flush=True)
+    timer.finish(f"Loaded {loaded_count} cog(s)")

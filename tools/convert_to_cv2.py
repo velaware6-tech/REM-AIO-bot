@@ -333,7 +333,7 @@ TARGET_DIRS = [
     "cogs/events",
     "cogs/antinuke",
     "cogs/automod",
-    "cogs/axon",
+    "cogs/rem",
 ]
 
 # Files where the converter's variable-based approach is unreliable

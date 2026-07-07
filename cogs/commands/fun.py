@@ -10,7 +10,7 @@ import os
 from discord.ext import commands
 from random import randint
 from utils.Tools import *
-from core import Cog, axon, Context
+from core import Cog, Rem, Context
 from pathlib import Path
 import json
 from PIL import Image, ImageDraw, ImageOps
