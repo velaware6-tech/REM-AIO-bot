@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SKIP = {"tools", "top-gg", "games", "__pycache__", "utils", "db"}
+SKIP = {"tools", "games", "__pycache__", "utils", "db"}
 
 IMPORT = "from utils.database import connect, open_connection\n"
 ASYNC_WITH_RE = re.compile(r"async with aiosqlite\.connect\(([^)]+)\) as (\w+):")

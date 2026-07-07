@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SKIP = {"tools", "top-gg", "games", "__pycache__"}
+SKIP = {"tools", "games", "__pycache__"}
 
 
 def cleanup(path: Path) -> bool:

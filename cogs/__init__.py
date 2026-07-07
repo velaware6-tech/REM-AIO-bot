@@ -74,8 +74,6 @@ from .events.greet2 import greet
 from .events.mention import Mention
 from .events.react import React
 from .events.autoreact import AutoReactListener
-#from .events.topgg import TopGG
-
 ########-------HELP-------########
 from .rem.antinuke import _antinuke
 from .rem.extra import _extra

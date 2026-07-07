@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SKIP_DIRS = {"__pycache__", ".git", "tools", "top-gg", "games"}
+SKIP_DIRS = {"__pycache__", ".git", "tools", "games"}
 SKIP_FILES = {
     ROOT / "utils" / "database.py",
     ROOT / "db" / "_db.py",
