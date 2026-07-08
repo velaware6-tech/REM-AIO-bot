@@ -1,102 +1,125 @@
 <p align="center">
-  <img src="remaio.png" alt="REM ALL IN ONE BOT" width="100%">
+  <img src="assets/readme/hero-banner.png" alt="REM — kawaii all-in-one Discord bot" width="100%">
 </p>
 
 <h1 align="center">♡ REM ALL IN ONE BOT ♡</h1>
 
 <p align="center">
-  <b>✧ your cute all-in-one Discord companion ✧</b><br>
-  moderation · security · music · tickets · games · welcome · logging & more~
+  <b>your soft, sparkly Discord bestie~</b><br>
+  one bot · every tool · zero chaos ✧
 </p>
 
 <p align="center">
-  <i>(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧ pastel panels · 119 cogs · 400+ commands · built with love by devrock</i>
+  <img src="https://img.shields.io/badge/python-3.11+-ffb7d5?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11+">
+  <img src="https://img.shields.io/badge/discord.py-2.x-ffc9dd?style=for-the-badge&logo=discord&logoColor=white" alt="discord.py">
+  <img src="https://img.shields.io/badge/kawaii_UI-ON-f8d7e8?style=for-the-badge" alt="Kawaii UI">
+  <img src="https://img.shields.io/badge/commands-400+-ffd6e7?style=for-the-badge" alt="400+ commands">
+  <img src="https://img.shields.io/badge/license-MIT-ffe3ef?style=for-the-badge" alt="MIT">
+</p>
+
+<p align="center">
+  <sub>119 cogs · pastel panels · built with love by <b>devrock</b> · (ﾉ◕ヮ◕)ﾉ*:･ﾟ✧</sub>
 </p>
 
 <br>
 
 <p align="center">
-
-  <!-- status badges -->
-  <img src="https://img.shields.io/badge/Python-3.11+-ff9ec8?style=flat-square&logo=python&logoColor=white" alt="Python 3.11+">
-  <img src="https://img.shields.io/badge/discord.py-2.x-ffb6c1?style=flat-square&logo=discord&logoColor=white" alt="discord.py">
-  <img src="https://img.shields.io/badge/Components_V2-Enabled-ffd1dc?style=flat-square" alt="Components V2">
-  <img src="https://img.shields.io/badge/Lavalink-Music-ff8fab?style=flat-square&logo=spotify&logoColor=white" alt="Lavalink Music">
-  <img src="https://img.shields.io/badge/License-MIT-ffc0cb?style=flat-square" alt="MIT License">
-
+  <a href="#-what-is-rem">What is REM?</a> ·
+  <a href="#-start-in-3-steps">Start</a> ·
+  <a href="#-super-powers">Powers</a> ·
+  <a href="#-music-corner">Music</a> ·
+  <a href="#-setup">Setup</a> ·
+  <a href="#-env-keys">Env</a> ·
+  <a href="#-folder-tour">Folders</a>
 </p>
 
 <br>
 
-<p align="center">
-  ♡ ╭──────────────────────────────────────────────────────────╮ ♡<br>
-  ♡ │&nbsp;&nbsp; <a href="#-quick-start">Quick Start</a> · <a href="#-features">Features</a> · <a href="#-music-player">Music</a> · <a href="#-setup-guide">Setup</a> · <a href="#-environment">Env</a> · <a href="#-project-map">Project</a> &nbsp;&nbsp;│ ♡<br>
-  ♡ ╰──────────────────────────────────────────────────────────╯ ♡
-</p>
+## ♡ What is REM?
+
+**REM** is a cute but powerful all-in-one Discord bot for servers that want everything in one place.
+
+Instead of juggling five different bots, you get moderation, security, music, tickets, welcome flows, games, logging, and utility commands — all wrapped in soft pastel **Components V2** panels that actually look good.
+
+> ✿ think: helpful mod tools + cozy UI + a lot of commands, without the mess~
 
 <br>
 
-## ♡ Quick Start
+## ♡ Start in 3 Steps
 
 ```bash
 pip install -r requirements.txt
-copy .env.example .env    # Windows
-# cp .env.example .env    # macOS / Linux
+copy .env.example .env
 python rem.py
 ```
 
-> ✿ Set `TOKEN`, `OWNER_IDS`, and optionally `PREFIX` in `.env` before starting — that's the minimum~
+| Step | Do this | Why |
+|:---:|:---|:---|
+| 1 | `pip install -r requirements.txt` | grab dependencies |
+| 2 | copy `.env.example` → `.env` | add your bot token |
+| 3 | `python rem.py` | boot REM |
+
+**Minimum `.env` keys:**
+
+```env
+TOKEN=your_discord_bot_token
+OWNER_IDS=your_user_id
+PREFIX=>
+```
+
+> ✿ that's literally it to get online~ music & AI are optional extras.
 
 <br>
 
-## ✧ Features
+## ✧ Super Powers
+
+<p align="center">
+  <img src="assets/readme/feature-security.png" width="22%" alt="Security">
+  &nbsp;
+  <img src="assets/readme/feature-music.png" width="22%" alt="Music">
+  &nbsp;
+  <img src="assets/readme/feature-tools.png" width="22%" alt="Tools">
+  &nbsp;
+  <img src="assets/readme/feature-games.png" width="22%" alt="Games">
+</p>
 
 <table>
 <tr>
 <td width="50%" valign="top">
 
-### ♡ Panels & UI
-- Components V2 help, utility & music cards
-- Kawaii pastel music player, search & queue
-- Auto-expiring help panels
-- Paginated CV2 lists
+### 🛡️ Security
+- **Antinuke** — stops nukes before they spread
+- **Automod** — spam, caps, links, invites
+- **Nightmode & emergency** — strip dangerous perms fast
+- Whitelist / blacklist / ignore systems
 
-### ♡ Music
-- Lavalink / Wavelink playback
-- Interactive player controls
-- Multi-platform search (YouTube, JioSaavn, SoundCloud)
-- Queue, loop, shuffle, autoplay, volume
+### 🎀 Moderation
+- ban · kick · timeout · warn · jail
+- lock · hide · purge · snipe
+- role tools & topcheck
 
-### ♡ Moderation
-- Ban · kick · timeout · warn
-- Lock · hide · role · purge · snipe
-- Jail & nightmode tools
-
-### ♡ Security
-- Antinuke event listeners
-- Automod: spam, caps, links, invites
-- Blacklist, block & whitelist systems
+### 🎵 Music
+- Lavalink playback via Wavelink
+- cute player · search · queue cards
+- loop · shuffle · autoplay · volume
 
 </td>
 <td width="50%" valign="top">
 
-### ♡ Server Tools
-- Tickets · giveaways · logging
-- Welcome · autorole · custom roles
-- Vanity roles · invite tracker
+### 🏠 Server Life
+- tickets · giveaways · logging
+- welcome · autorole · vanity roles
+- invite tracker · reaction roles
 
-### ♡ Utility
-- Stats · botinfo · AFK · translate
-- QR codes · emoji sync · maps
-- AI chat (optional OpenAI key)
+### 🎮 Fun & Games
+- chess · wordle · 2048 · rps
+- blackjack · slots · typeracer
+- button-game UIs
 
-### ♡ Games
-- Chess · RPS · Wordle · 2048
-- Blackjack · slots & more
-
-### ♡ Admin
-- No-prefix · global actions
-- Owner tools · emergency controls
+### ✨ Extras
+- AI chat *(optional key)*
+- translate · QR · maps · stats
+- emoji sync · custom roles · AFK
 
 </td>
 </tr>
@@ -104,175 +127,111 @@ python rem.py
 
 <br>
 
-## ♡ Music Player
+## ♡ Music Corner
 
 <p align="center">
-  <img src="https://img.shields.io/badge/♡_Now_Playing-ffb7c5?style=for-the-badge" alt="Now Playing">
-  <img src="https://img.shields.io/badge/♡_Search-ffd1dc?style=for-the-badge" alt="Search">
-  <img src="https://img.shields.io/badge/♡_Queue-f8c8dc?style=for-the-badge" alt="Queue">
+  <img src="https://img.shields.io/badge/♡_play-ffb7c5?style=for-the-badge" alt="play">
+  <img src="https://img.shields.io/badge/♡_search-ffd1dc?style=for-the-badge" alt="search">
+  <img src="https://img.shields.io/badge/♡_queue-f8c8dc?style=for-the-badge" alt="queue">
 </p>
 
-Cute CV2 cards for the whole music flow — player, search results, queue pages, and action toasts all match~
+| Command | what it does~ |
+|:---|:---|
+| `>play <song>` | play now |
+| `>search <query>` | pick from results |
+| `>nowplaying` | live track info |
+| `>queue` | see what's next |
+| `>pause` / `>resume` / `>skip` | control playback |
+| `>volume <1-150>` | set loudness |
+| `>loop` / `>shuffle` / `>autoplay` | queue modes |
 
-| Command | What it does |
-| --- | --- |
-| `>play <query>` | Play a song or playlist |
-| `>search <query>` | Pick a platform & search |
-| `>nowplaying` | Live progress & track info |
-| `>queue` | Paginated upcoming tracks |
-| `>pause` / `>resume` / `>skip` | Playback controls |
-| `>volume <1-150>` | Set player volume |
-| `>loop` / `>shuffle` / `>autoplay` | Queue modes |
-
-Configure Lavalink in `.env`:
+**Optional — add to `.env` for music:**
 
 ```env
-LAVALINK_ENABLED=true
-LAVALINK_IDENTIFIER=main
-LAVALINK_URI=http://127.0.0.1:2333
-LAVALINK_PASSWORD=youshallnotpass
-LAVALINK_PRECHECK=true
-```
-
-> ✿ Restart `python rem.py` fully after music or code changes — hot reload won't update a running process~
-
-<br>
-
-## ♡ Setup Guide
-
-### Requirements
-
-| Need | Why |
-| --- | --- |
-| Python **3.11+** | Runtime |
-| `TOKEN` | Discord bot token |
-| **Message Content** intent | Prefix commands |
-| **Server Members** intent | Mod, welcome, antinuke |
-| Lavalink node *(optional)* | Music playback |
-
-### Installation
-
-**1.** Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-**2.** Create your env file
-
-```bash
-copy .env.example .env    # Windows
-```
-
-**3.** Fill in `.env` *(never commit this file!)*
-
-```env
-TOKEN=your_discord_bot_token
-PREFIX=>
-BOT_NAME=REM ALL IN ONE BOT
-OWNER_IDS=123456789012345678
 LAVALINK_ENABLED=true
 LAVALINK_URI=http://127.0.0.1:2333
 LAVALINK_PASSWORD=youshallnotpass
 ```
 
-**4.** Run the bot
-
-```bash
-python rem.py
-```
-
-On startup you'll see the REM console banner, cog load progress, shard connections, and a ready summary ✧
+> ✿ restart the bot fully after changing music config~
 
 <br>
 
-## ♡ Environment
+## ♡ Setup
 
-| Key | Required | Purpose |
-| --- | :---: | --- |
-| `TOKEN` | ✅ | Discord bot token |
-| `OWNER_IDS` | ✅ | Comma-separated owner user IDs |
-| `PREFIX` | — | Default command prefix (default: `>`) |
-| `BOT_NAME` | — | Display name in panels |
-| `BYPASS_IDS` | — | Users that bypass security checks |
-| `COMMAND_LOG_WEBHOOK_URL` | — | Command usage log webhook |
-| `LAVALINK_URI` / `LAVALINK_PASSWORD` | 🎵 | Lavalink music node |
-| `OPENAI_API_KEY` | — | Optional AI/chat features |
-| `SPOTIFY_CLIENT_ID` / `SECRET` | — | Optional Spotify resolution |
-| `GIPHY_TOKEN`, `PEXELS_API_KEY`, etc. | — | Optional fun/utility APIs |
+### You need
 
-See [`.env.example`](.env.example) for the full list~
+| Thing | For |
+|:---|:---|
+| Python **3.11+** | running the bot |
+| Discord **bot token** | login |
+| **Message Content** intent | prefix commands |
+| **Server Members** intent | mod + welcome + security |
+| Lavalink *(optional)* | music only |
 
-<br>
+### Discord permissions
 
-## ♡ Permissions
+Give REM **Administrator** for the easiest setup, or manually:
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Recommended-Administrator-ff6b9d?style=flat-square&logo=discord&logoColor=white" alt="Administrator">
-</p>
+- manage server · roles · channels · messages
+- ban · kick · moderate members · audit log
+- send messages · embeds · attach files
+- connect + speak *(music)*
 
-Or grant these manually:
-
-- Manage Server, Roles, Channels, Messages
-- Ban / Kick / Moderate Members, View Audit Log
-- Send Messages, Embed Links, Attach Files, Use External Emojis
-- Connect, Speak *(for music)*
-
-Setup commands (antinuke, automod, tickets, emergency, etc.) are restricted to owners, bypass users, server owners, or administrators.
+Security setup commands (`antinuke`, `automod`, `emergency`, etc.) are limited to **owner**, **admin**, or **bypass** users.
 
 <br>
 
-## ♡ Project Map
+## ♡ Env Keys
+
+| Key | need it? | what for |
+|:---|:---:|:---|
+| `TOKEN` | ✅ | bot token |
+| `OWNER_IDS` | ✅ | your user ID(s) |
+| `PREFIX` | — | default `>` |
+| `BOT_NAME` | — | name in panels |
+| `BYPASS_IDS` | — | trusted bypass users |
+| `LAVALINK_URI` | 🎵 | music node |
+| `OPENAI_API_KEY` | — | AI chat |
+| `COMMAND_LOG_WEBHOOK_URL` | — | command logs |
+
+Full list → [`.env.example`](.env.example)
+
+<br>
+
+## ♡ Folder Tour
 
 ```text
-rem.py              ♡ entry point
-core/rem.py         ♡ Rem bot class (AutoShardedBot)
-core/Context.py     ♡ custom command context
-cogs/commands/      ♡ user-facing commands
-cogs/rem/           ♡ help category panels
-cogs/moderation/    ♡ moderation actions
-cogs/antinuke/      ♡ antinuke listeners
-cogs/automod/       ♡ automod listeners
-cogs/events/        ♡ guild & error events
-utils/              ♡ config, database, console, CV2 UI
-utils/music_panel.py♡ kawaii music card builders
-db/                 ♡ per-feature SQLite databases
-data/               ♡ runtime assets
-games/              ♡ standalone game engines
+rem.py                 ♡ start here
+core/                  ♡ bot brain + context
+cogs/commands/         ♡ all user commands
+cogs/moderation/       ♡ mod actions
+cogs/antinuke/         ♡ anti-nuke listeners
+cogs/automod/          ♡ automod listeners
+cogs/rem/              ♡ kawaii help panels
+utils/                 ♡ config · DB · CV2 UI
+games/                 ♡ game engines
+db/                    ♡ sqlite databases
+assets/readme/         ♡ cute readme art ✧
 ```
 
 <br>
 
-## ♡ Development
+## ♡ Dev Stuff
 
-**Syntax check**
+**syntax check**
 
 ```bash
 python -m compileall rem.py cogs utils core
 ```
 
-**Health endpoint** *(when keep-alive is enabled)*
+**health check** *(keep-alive on)*
 
 ```text
 GET http://127.0.0.1:8080/health
 ```
 
-<br>
-
-## ♡ Security
-
-- Regenerate your bot token if it's ever exposed
-- Keep `.env`, databases, and logs out of git
-- Limit `OWNER_IDS` and `BYPASS_IDS` to trusted users
-- Restart after permission, security, or environment changes
-
-<br>
-
-## ♡ Logs
-
-Console output uses the REM anime-style logger ✧
-
-Full debug logs are written to:
+**logs**
 
 ```text
 logs/rem.log
@@ -280,13 +239,22 @@ logs/rem.log
 
 <br>
 
-## ♡ License & Credits
+## ♡ Stay Safe
 
-**MIT License** — Copyright (c) 2026 **devrock**
+- never commit `.env` or database files
+- regenerate token if leaked
+- keep `OWNER_IDS` / `BYPASS_IDS` tiny & trusted
+- full restart after security or permission changes
 
-See [LICENSE](LICENSE) for full terms.
+<br>
+
+## ♡ Credits
+
+**MIT License** · © 2026 **devrock**
 
 <p align="center">
+  <img src="remaio.png" alt="REM mascot" width="48%">
+  <br><br>
   <b>♡ REM ALL IN ONE BOT ♡</b><br>
-  made with love by <b>devrock</b>
+  <sub>made with love · stay kawaii · stay protected~</sub>
 </p>
