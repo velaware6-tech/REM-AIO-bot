@@ -152,9 +152,51 @@ async def deny(ctx, message: str):
         return await ctx.send(message)
 
 
+TIME_WINDOW = 10
+
+DEFAULT_LIMITS = {
+    "ban": 3,
+    "kick": 3,
+    "prune": 2,
+    "botadd": 2,
+    "channel_create": 4,
+    "channel_delete": 4,
+    "channel_update": 6,
+    "role_create": 4,
+    "role_delete": 4,
+    "role_update": 6,
+    "member_update": 6,
+    "guild_update": 3,
+    "webhook": 4,
+    "integration": 3,
+    "mention_everyone": 3,
+}
+
+
+class SecurityAccessDenied(commands.CheckFailure):
+    """Raised after the denial panel is already sent to the user."""
+
+
 def security_manager_check():
     async def predicate(ctx):
-        return bool(ctx.guild and is_security_manager(ctx.author))
+        if ctx.guild and is_security_manager(ctx.author):
+            return True
+
+        from utils.cv2_compat import embed_to_view
+
+        embed = discord.Embed(
+            title=f"{emojis.CROSSICON} Access Denied",
+            description=(
+                "Only the **server owner** or a member with **Administrator** "
+                "can manage security settings."
+            ),
+            color=0x000000,
+        )
+        try:
+            await ctx.send(view=embed_to_view(embed))
+        except discord.HTTPException:
+            pass
+        raise SecurityAccessDenied()
 
     return commands.check(predicate)
 

@@ -27,10 +27,12 @@ class Antinuke(commands.Cog):
 
     
   async def enable_limit_settings(self, guild_id):
-    default_limits = DEFAULT_LIMITS
-    for action, limit in default_limits.items():
-      await self.db.execute('INSERT OR REPLACE INTO limit_settings (guild_id, action_type, action_limit, time_window) VALUES (?, ?, ?, ?)', (guild_id, action, limit, TIME_WINDOW))
-      await self.db.commit()
+    for action, limit in DEFAULT_LIMITS.items():
+      await self.db.execute(
+        'INSERT OR REPLACE INTO limit_settings (guild_id, action_type, action_limit, time_window) VALUES (?, ?, ?, ?)',
+        (guild_id, action, limit, TIME_WINDOW),
+      )
+    await self.db.commit()
 
   async def disable_limit_settings(self, guild_id):
     await self.db.execute('DELETE FROM limit_settings WHERE guild_id = ?', (guild_id,))
@@ -79,7 +81,7 @@ class Antinuke(commands.Cog):
       embed.add_field(name='__**Antinuke Disable**__', value=f'To Disable Antinuke, Use - `{pre}antinuke disable`')
       
 
-      embed.set_thumbnail(url=self.bot.user.avatar.url)
+      embed.set_thumbnail(url=self.bot.user.display_avatar.url)
       await ctx.send(view = embed_to_view(embed))
 
     elif option.lower() == 'enable':
@@ -88,7 +90,7 @@ class Antinuke(commands.Cog):
           description=f'**Security Settings For {ctx.guild.name}**\nYour server __**already has Antinuke enabled.**__\n\nCurrent Status: {emojis.ENABLED} Enabled\nTo Disable use `antinuke disable`',
           color=0x000000
         )
-        embed.set_thumbnail(url=self.bot.user.avatar.url)
+        embed.set_thumbnail(url=self.bot.user.display_avatar.url)
         await ctx.send(view = embed_to_view(embed))
       else:
         
@@ -156,6 +158,7 @@ class Antinuke(commands.Cog):
 
         await self.db.execute('INSERT OR REPLACE INTO antinuke (guild_id, status) VALUES (?, ?)', (guild_id, True))
         await self.db.commit()
+        await self.enable_limit_settings(guild_id)
 
         await asyncio.sleep(1)
         await setup_message.delete()
@@ -165,12 +168,12 @@ class Antinuke(commands.Cog):
           color=0x000000
         )
 
-        embed.add_field(name='', value=f"{emojis.ENABLED_160063} **Anti Prune**\n **Auto Recovery**")
+        embed.add_field(name="Additional Modules", value=f"{emojis.ENABLED_160063} **Anti Prune**\n{emojis.ENABLED_160063} **Auto Recovery**")
 
-        embed.set_author(name="REM ALL IN ONE BOT Antinuke", icon_url=self.bot.user.avatar.url)
+        embed.set_author(name="REM ALL IN ONE BOT Antinuke", icon_url=self.bot.user.display_avatar.url)
 
-        embed.set_footer(text="Successfully Enabled Antinuke for this server | Powered by REM ALL IN ONE BOT", icon_url=self.bot.user.avatar.url)
-        embed.set_thumbnail(url=self.bot.user.avatar.url)
+        embed.set_footer(text="Successfully Enabled Antinuke for this server | Powered by REM ALL IN ONE BOT", icon_url=self.bot.user.display_avatar.url)
+        embed.set_thumbnail(url=self.bot.user.display_avatar.url)
 
         view = discord.ui.View()
         view.add_item(discord.ui.Button(label="Show Punishment Type", custom_id="show_punishment"))
@@ -183,15 +186,16 @@ class Antinuke(commands.Cog):
           description=f'**Security Settings For {ctx.guild.name}**\nUhh, looks like your server hasn\'t enabled Antinuke.\n\nCurrent Status: {emojis.DISABLED1} Disabled\n\nTo Enable use `antinuke enable`',
           color=0x000000
         )
-        embed.set_thumbnail(url=self.bot.user.avatar.url)
+        embed.set_thumbnail(url=self.bot.user.display_avatar.url)
       else:
         await self.db.execute('DELETE FROM antinuke WHERE guild_id = ?', (guild_id,))
         await self.db.commit()
+        await self.disable_limit_settings(guild_id)
         embed = discord.Embed(
           description=f'**Security Settings For {ctx.guild.name}**\nSuccessfully disabled Antinuke for this server.\n\nCurrent Status: {emojis.DISABLED1} Disabled\n\nTo Enable use `antinuke enable`',
           color=0x000000
         )
-        embed.set_thumbnail(url=self.bot.user.avatar.url)
+        embed.set_thumbnail(url=self.bot.user.display_avatar.url)
       await ctx.send(view = embed_to_view(embed))
     else:
       embed = discord.Embed(
@@ -207,28 +211,28 @@ class Antinuke(commands.Cog):
       return
     if not interaction.data or interaction.data.get('custom_id') != 'show_punishment':
       return
-    
-      embed = discord.Embed(
-        title="Punishment Types for Changes Made by Unwhitelisted Admins/Mods",
-        description=(
-          "**Anti Ban:** Ban\n"
-          "**Anti Kick:** Ban\n"
-          "**Anti Bot:** Ban the bot Inviter\n"
-          "**Anti Channel Create/Delete/Update:** Ban\n"
-          "**Anti Everyone/Here:** Remove the message & 1 hour timeout\n"
-          "**Anti Role Create/Delete/Update:** Ban\n"
-          "**Anti Member Update:** Ban\n"
-          "**Anti Guild Update:** Ban\n"
-          "**Anti Integration:** Ban\n"
-          "**Anti Webhook Create/Delete/Update:** Ban\n"
-          "**Anti Prune:** Ban\n"
-          "**Auto Recovery:** Automatically recover damaged channels, roles, and settings\n\n"
-          "Note: In the case of member updates, action will be taken only if the role contains dangerous permissions such as Ban Members, Administrator, Manage Guild, Manage Channels, Manage Roles, Manage Webhooks, or Mention Everyone"
-        ),
-        color=0x000000
-      )
-      embed.set_footer(text="These punishment types are fixed and assigned as required to ensure guild security/protection", icon_url=self.bot.user.display_avatar.url)
-      await interaction.response.send_message(view = embed_to_view(embed), ephemeral=True)
+
+    embed = discord.Embed(
+      title="Punishment Types for Changes Made by Unwhitelisted Admins/Mods",
+      description=(
+        "**Anti Ban:** Ban\n"
+        "**Anti Kick:** Ban\n"
+        "**Anti Bot:** Ban the bot Inviter\n"
+        "**Anti Channel Create/Delete/Update:** Ban\n"
+        "**Anti Everyone/Here:** Remove the message & 1 hour timeout\n"
+        "**Anti Role Create/Delete/Update:** Ban\n"
+        "**Anti Member Update:** Ban\n"
+        "**Anti Guild Update:** Ban\n"
+        "**Anti Integration:** Ban\n"
+        "**Anti Webhook Create/Delete/Update:** Ban\n"
+        "**Anti Prune:** Ban\n"
+        "**Auto Recovery:** Automatically recover damaged channels, roles, and settings\n\n"
+        "Note: In the case of member updates, action will be taken only if the role contains dangerous permissions such as Ban Members, Administrator, Manage Guild, Manage Channels, Manage Roles, Manage Webhooks, or Mention Everyone"
+      ),
+      color=0x000000
+    )
+    embed.set_footer(text="These punishment types are fixed and assigned as required to ensure guild security/protection", icon_url=self.bot.user.display_avatar.url)
+    await interaction.response.send_message(view=embed_to_view(embed), ephemeral=True)
 
 """
 @Author: Sonu Jana

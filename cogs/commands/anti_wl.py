@@ -90,7 +90,7 @@ class Whitelist(commands.Cog):
                     f"To enable use `{prefix}antinuke enable` **"
                 )
             )
-            embed.set_thumbnail(url=ctx.bot.user.avatar.url)
+            embed.set_thumbnail(url=ctx.bot.user.display_avatar.url)
             return await ctx.send(view = embed_to_view(embed))
 
         if not member:
@@ -100,7 +100,7 @@ class Whitelist(commands.Cog):
                 description="**Adding a user to the whitelist means that no actions will be taken against them if they trigger the Anti-Nuke Module.**"
             )
             embed.add_field(name="__**Usage**__", value=f"{emojis.ICONARROWRIGHT} `{prefix}whitelist @user/id`\n{emojis.ICONARROWRIGHT} `{prefix}wl @user`")
-            embed.set_thumbnail(url=ctx.bot.user.avatar.url)
+            embed.set_thumbnail(url=ctx.bot.user.display_avatar.url)
             return await ctx.send(view = embed_to_view(embed))
 
         async with self.db.execute(
@@ -169,7 +169,7 @@ class Whitelist(commands.Cog):
         )
         embed.add_field(name="**Executor**", value=f"<@!{ctx.author.id}>", inline=True)
         embed.add_field(name="**Target**", value=f"<@!{member.id}>", inline=True)
-        embed.set_thumbnail(url=self.bot.user.avatar.url)
+        embed.set_thumbnail(url=self.bot.user.display_avatar.url)
         embed.set_footer(text=f"Developed by REM ALL IN ONE BOT")
 
         msg = await ctx.send(view = embed_to_view(embed, view = view))
@@ -210,7 +210,7 @@ class Whitelist(commands.Cog):
                 )
                 embed.add_field(name="**Executor**", value=f"<@!{ctx.author.id}>", inline=True)
                 embed.add_field(name="**Target**", value=f"<@!{member.id}>", inline=True)
-                embed.set_thumbnail(url=self.bot.user.avatar.url)
+                embed.set_thumbnail(url=self.bot.user.display_avatar.url)
                 embed.set_footer(text=f"Developed by REM ALL IN ONE BOT")
 
                 await interaction.response.edit_message(view = embed_to_view(embed, view = None))
@@ -254,7 +254,7 @@ class Whitelist(commands.Cog):
                 )
                 embed.add_field(name="**Executor**", value=f"<@!{ctx.author.id}>", inline=True)
                 embed.add_field(name="**Target**", value=f"<@!{member.id}>", inline=True)
-                embed.set_thumbnail(url=self.bot.user.avatar.url)
+                embed.set_thumbnail(url=self.bot.user.display_avatar.url)
                 embed.set_footer(text=f"Developed by REM ALL IN ONE BOT")
 
                 await interaction.response.edit_message(view = embed_to_view(embed, view = None))

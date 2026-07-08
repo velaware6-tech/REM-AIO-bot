@@ -17,19 +17,22 @@ __pycache__/
 .pyre/
 .coverage
 htmlcov/
+*.pyo
 
-# Virtual environments
+# Virtual environments and in-project package installs
 .venv/
 venv/
 env/
 ENV/
 virtualenv/
+.local/
 
 # Build and packaging output
 build/
 dist/
 *.egg-info/
 pip-wheel-metadata/
+*.whl
 
 # Logs and runtime output
 *.log
@@ -46,6 +49,7 @@ db/*.db
 db/*.db-*
 db/*.sqlite
 db/*.sqlite3
+ignore.json
 
 # Generated media and temporary assets
 data/ship/tmp_*.png
@@ -56,7 +60,7 @@ data/pictures/spotify_card_output.png
 *.bak
 *.bak2
 
-# OS and editor files
+# IDE, agent, and local session files
 .DS_Store
 Thumbs.db
 desktop.ini
@@ -64,6 +68,8 @@ desktop.ini
 .vscode/
 *.swp
 *.swo
+terminals/
+.cursor/
 
 # Tooling caches
 .cache/

@@ -56,7 +56,7 @@ class Nightmode(commands.Cog):
             value=" `nightmode enable`\n `nightmode disable`",
             inline=False
         )
-        nightmode_embed.set_thumbnail(url=self.bot.user.avatar.url)
+        nightmode_embed.set_thumbnail(url=self.bot.user.display_avatar.url)
         await ctx.send(view = embed_to_view(nightmode_embed))
 
     @nightmode.command(name="enable", help="Enable nightmode")
@@ -110,20 +110,22 @@ class Nightmode(commands.Cog):
                     description='Nightmode is already enabled.'
                 )))
 
-        async with self.db.cursor() as cursor:
-            for role in manageable_roles:
-                admin_permissions = discord.Permissions(administrator=True)
-                if role.permissions.administrator:
-                    permissions = role.permissions
-                    permissions.administrator = False
+        for role in manageable_roles:
+            admin_permissions = discord.Permissions(administrator=True)
+            if role.permissions.administrator:
+                permissions = role.permissions
+                permissions.administrator = False
 
-                    await role.edit(permissions=permissions, reason='Nightmode ENABLED')
+                await role.edit(permissions=permissions, reason='Nightmode ENABLED')
 
-                    await cursor.execute('''
+                await self.db.execute(
+                    '''
                     INSERT OR REPLACE INTO Nightmode (guildId, roleId, adminPermissions)
                     VALUES (?, ?, ?)
-                    ''', (str(ctx.guild.id), str(role.id), int(admin_permissions.value)))
-            await self.db.commit()
+                    ''',
+                    (str(ctx.guild.id), str(role.id), int(admin_permissions.value)),
+                )
+        await self.db.commit()
 
         await ctx.send(view = embed_to_view(discord.Embed(title=f"{emojis.TICK} Success",
             color=self.color,
@@ -168,15 +170,17 @@ class Nightmode(commands.Cog):
                 description='Nightmode is not enabled.'
             )))
 
-        async with self.db.cursor() as cursor:
-            for role_id, admin_permissions in stored_roles:
-                role = ctx.guild.get_role(int(role_id))
-                if role:
-                    permissions = discord.Permissions(administrator=bool(admin_permissions))
-                    await role.edit(permissions=permissions, reason='Nightmode DISABLED')
+        for role_id, admin_permissions in stored_roles:
+            role = ctx.guild.get_role(int(role_id))
+            if role:
+                permissions = discord.Permissions(administrator=bool(admin_permissions))
+                await role.edit(permissions=permissions, reason='Nightmode DISABLED')
 
-                    await cursor.execute('DELETE FROM Nightmode WHERE guildId = ? AND roleId = ?', (str(ctx.guild.id), role_id))
-            await self.db.commit()
+            await self.db.execute(
+                'DELETE FROM Nightmode WHERE guildId = ? AND roleId = ?',
+                (str(ctx.guild.id), role_id),
+            )
+        await self.db.commit()
 
         await ctx.send(view = embed_to_view(discord.Embed(title=f"{emojis.TICK} Success",
             color=self.color,

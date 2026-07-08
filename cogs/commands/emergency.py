@@ -98,7 +98,7 @@ class Emergency(commands.Cog):
         embed.add_field(name=f"`{ctx.prefix}emergency authorise`", value="> Manage authorized users for executing `emergencysituation` command.", inline=False)
         embed.add_field(name=f"`{ctx.prefix}emergency role`", value="> Manage roles added to the emergency list. You can add/remove/list roles by emergency role group.", inline=False)
         embed.add_field(name=f"`{ctx.prefix}emergency-situation` or `{ctx.prefix}emgs`", value="> Execute emergency situation which disables dangerous permissions from roles in the emergency list & move the role with maximum member to top position below the bot top role. Restore disabled permissions of role using `emgrestore`.", inline=False)
-        embed.set_footer(text="Use \"help emergency <subcommand>\" for more information.", icon_url=self.bot.user.avatar.url)
+        embed.set_footer(text="Use \"help emergency <subcommand>\" for more information.", icon_url=self.bot.user.display_avatar.url)
         await ctx.reply(view = embed_to_view(embed))
 
 

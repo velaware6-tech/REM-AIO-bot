@@ -5,7 +5,7 @@ from discord.ext import commands
 from discord import app_commands
 from utils.config import serverLink
 from core import Rem, Cog, Context
-from utils.Tools import get_ignore_data
+from utils.Tools import SecurityAccessDenied, get_ignore_data
 from utils.cv2_compat import embed_to_view, embeds_to_view
 
 log = logging.getLogger(__name__)
@@ -29,6 +29,10 @@ class Errors(Cog):
       return
 
     if isinstance(error, commands.CheckFailure):
+      if isinstance(error, SecurityAccessDenied):
+        ctx.command.reset_cooldown(ctx)
+        return
+
       if isinstance(error, commands.MissingPermissions):
         missing = [perm.replace("_", " ").replace("guild", "server").title() for perm in error.missing_permissions]
         fmt = "{}, and {}".format(", ".join(missing[:-1]), missing[-1]) if len(missing) > 2 else " and ".join(missing)

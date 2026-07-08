@@ -57,7 +57,11 @@ async def is_extra_owner(guild_id: int, user_id: int) -> bool:
 
 
 async def is_whitelisted(guild_id: int, user_id: int, column: str) -> bool:
-    allowed = {"ban", "kick", "role", "channel", "webhook", "integration", "prune", "member"}
+    allowed = {
+        "ban", "kick", "prune", "botadd", "serverup", "memup",
+        "chcr", "chdl", "chup", "rlcr", "rlup", "rldl",
+        "meneve", "mngweb", "mngstemo",
+    }
     if column not in allowed:
         raise ValueError(f"Invalid whitelist column: {column}")
     async with connect("anti.db") as db:
