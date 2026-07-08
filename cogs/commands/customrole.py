@@ -10,7 +10,7 @@ from utils.Tools import *
 from typing import List, Tuple
 from utils.cv2_compat import embed_to_view, embeds_to_view
 
-DATABASE_PATH = 'db/customrole.db'
+DATABASE_PATH = 'customrole.db'
 DATABASE_PATH2 = 'np.db'
 
 
@@ -22,9 +22,8 @@ class Customrole(commands.Cog):
         self.rate_limit = {}
         self.rate_limit_timeout = 5
 
-
-        asyncio.create_task(self.create_tables())
-
+    async def cog_load(self) -> None:
+        await self.create_tables()
 
     async def reset_rate_limit(self, user_id):
         await asyncio.sleep(self.rate_limit_timeout)

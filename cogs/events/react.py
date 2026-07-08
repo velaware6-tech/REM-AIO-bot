@@ -1,8 +1,13 @@
 from utils import emojis
 
+import logging
+
 import discord
 from discord.ext import commands
 import asyncio
+
+log = logging.getLogger(__name__)
+
 
 class React(commands.Cog):
 
@@ -47,5 +52,5 @@ class React(commands.Cog):
                 except discord.errors.RateLimited as e:
                     await asyncio.sleep(e.retry_after)
                     await message.add_reaction(f"{emojis.OWNER}")
-                except Exception as e:
-                    print(f"An unexpected error occurred Auto react owner mention: {e}")
+                except Exception:
+                    log.exception("Auto react owner mention failed")

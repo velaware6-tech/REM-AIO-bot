@@ -3,7 +3,11 @@ import discord
 from discord.ext import commands
 import datetime
 import asyncio
+import logging
 import pytz
+
+log = logging.getLogger(__name__)
+
 
 class AntiPrune(commands.Cog):
     def __init__(self, bot):
@@ -21,8 +25,8 @@ class AntiPrune(commands.Cog):
 
                 return entry
     
-        except Exception as e:
-            print(f"Error fetching audit logs: {e}")
+        except Exception:
+            log.exception("Error fetching prune audit logs for guild %s", guild.id)
         return None
 
     @commands.Cog.listener()
@@ -66,25 +70,23 @@ class AntiPrune(commands.Cog):
                 await guild.ban(executor, reason="Member Prune | Unwhitelisted User")
                 return
             except discord.Forbidden:
-                print(f"Failed to ban {executor.id} due to missing permissions.")
+                log.warning("Failed to ban %s for prune: missing permissions", executor.id)
                 return
-            except discord.HTTPException as e:
-                if e.status == 429:
-                    retry_after = e.response.headers.get('Retry-After')
+            except discord.HTTPException as exc:
+                if exc.status == 429:
+                    retry_after = exc.response.headers.get('Retry-After') if exc.response else None
                     if retry_after:
-                        retry_after = float(retry_after)
-                        print(f"Rate limit encountered. Retrying after {retry_after} seconds.")
-                        await asyncio.sleep(retry_after)
+                        await asyncio.sleep(float(retry_after))
                         retries -= 1
                 else:
-                    print(f"HTTPException encountered: {e}")
+                    log.warning("Antinuke prune ban failed for %s: %s", executor.id, exc)
                     return
-            except discord.errors.RateLimited as e:
-                print(f"Rate limit encountered while banning: {e}. Retrying in {e.retry_after} seconds.")
-                await asyncio.sleep(e.retry_after)
+            except discord.errors.RateLimited as exc:
+                log.warning("Rate limited while banning %s for prune; retrying in %ss", executor.id, exc.retry_after)
+                await asyncio.sleep(exc.retry_after)
                 retries -= 1
-            except Exception as e:
-                print(f"An unexpected error occurred while banning {executor.id}: {e}")
+            except Exception:
+                log.exception("Unexpected error while banning %s for prune", executor.id)
                 return
 
-        print(f"Failed to ban {executor.id} after multiple attempts due to rate limits.")
+        log.warning("Failed to ban %s for prune after multiple attempts", executor.id)

@@ -11,8 +11,10 @@ from utils.Tools import *
 class AutoReaction(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.db_path = 'db/autoreact.db'
-        asyncio.create_task(self.setup_database())
+        self.db_path = 'autoreact.db'
+
+    async def cog_load(self) -> None:
+        await self.setup_database()
 
     async def setup_database(self):
         async with connect(self.db_path) as db:

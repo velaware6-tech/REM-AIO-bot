@@ -120,11 +120,11 @@ class Owner(commands.Cog):
         self.db_path = 'np.db'
         self.stop_tour = False
         self.bot_owner_ids = OWNER_IDS
-        asyncio.create_task(self.setup_database())
-        asyncio.create_task(self.load_staff())
 
     async def cog_load(self) -> None:
         await ensure_badges_table()
+        await self.setup_database()
+        await self.load_staff()
 
     async def setup_database(self):
         async with connect(self.db_path) as db:

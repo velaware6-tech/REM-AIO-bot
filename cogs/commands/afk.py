@@ -15,7 +15,7 @@ black1 = 0
 black2 = 0
 black3 = 0
 
-DB_PATH = "db/afk.db"
+DB_PATH = "afk.db"
 
 class BasicView(discord.ui.View):
     def __init__(self, ctx: commands.Context, timeout: Optional[int] = None):
@@ -52,10 +52,11 @@ class afk(commands.Cog):
 
     def __init__(self, client, *args, **kwargs):
         self.client = client
-        asyncio.create_task(self.initialize_db())
+
+    async def cog_load(self) -> None:
+        await self.initialize_db()
 
     async def initialize_db(self):
-        os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
         async with connect(DB_PATH) as db:
             await db.execute("""
                 CREATE TABLE IF NOT EXISTS afk (

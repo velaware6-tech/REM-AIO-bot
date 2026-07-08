@@ -318,11 +318,12 @@ class Music(commands.Cog):
         self.client = client
         self.lavalink_connected = False
         self.lavalink_nodes = self._load_lavalink_nodes()
+        self.inactivity_timeout = 120
+        self.player_inactivity = {}
+
+    async def cog_load(self) -> None:
         asyncio.create_task(self.connect_nodes())
         asyncio.create_task(self.monitor_inactivity())
-        
-        self.inactivity_timeout = 120 
-        self.player_inactivity = {}  
 
     def _env_bool(self, name: str, default: bool) -> bool:
         value = os.getenv(name)

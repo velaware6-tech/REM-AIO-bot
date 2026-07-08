@@ -17,7 +17,7 @@ logging.basicConfig(
     datefmt="%H:%M:%S",
 )
 
-DATABASE_PATH = 'db/autorole.db'
+DATABASE_PATH = 'autorole.db'
 
 class BasicView(discord.ui.View):
     def __init__(self, ctx: commands.Context, timeout=60):
@@ -34,8 +34,10 @@ class BasicView(discord.ui.View):
 class AutoRole(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        asyncio.create_task(self.create_table())
         self.color = 0x000000
+
+    async def cog_load(self) -> None:
+        await self.create_table()
 
     async def create_table(self):
         async with connect(DATABASE_PATH) as db:

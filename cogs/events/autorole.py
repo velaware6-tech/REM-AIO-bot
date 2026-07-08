@@ -6,7 +6,7 @@ import logging
 from discord.ext import commands
 from core import Rem, Cog
 
-DATABASE_PATH = 'db/autorole.db'
+DATABASE_PATH = 'autorole.db'
 logger = logging.getLogger(__name__)
 
 class Autorole2(Cog):
@@ -43,18 +43,16 @@ class Autorole2(Cog):
                 try:
                     await member.add_roles(role, reason="REM ALL IN ONE BOT Autoroles")
                 except discord.Forbidden:
-                    print(f"Bot lacks permissions to add role in a guild during Autorole Event .")
-                except discord.HTTPException as e:
-                    if e.status == 429:
-                        retry_after = e.response.headers.get('Retry-After')
+                    logger.warning("Bot lacks permissions to add autorole in guild %s", member.guild.id)
+                except discord.HTTPException as exc:
+                    if exc.status == 429:
+                        retry_after = exc.response.headers.get('Retry-After') if exc.response else None
                         if retry_after:
-                            retry_after = float(retry_after)
-                            print(f"(Autorole) Rate limit encountered. Retrying after {retry_after} seconds.")
-                            await asyncio.sleep(retry_after)
+                            await asyncio.sleep(float(retry_after))
                             await member.add_roles(role, reason="REM ALL IN ONE BOT  Autoroles")
-                except discord.errors.RateLimited as e:
-                    print(f"Rate limit encountered: {e}. Retrying in {e.retry_after} seconds.")
-                    await asyncio.sleep(e.retry_after)
+                except discord.errors.RateLimited as exc:
+                    logger.warning("Autorole rate limited in guild %s; retrying in %ss", member.guild.id, exc.retry_after)
+                    await asyncio.sleep(exc.retry_after)
                     await member.add_roles(role, reason="REM ALL IN ONE BOT  Autoroles")
                 except Exception as e:
                     logger.error(f"Unexpected error in Autorole: {e}")

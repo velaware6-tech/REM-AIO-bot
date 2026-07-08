@@ -1,11 +1,14 @@
 from utils.database import connect
 from utils import emojis
 
+import logging
+
 import discord
 from discord.ext import commands
 from discord import ui
-import asyncio
 from utils.Tools import *
+
+log = logging.getLogger(__name__)
 from utils.cv2_compat import embed_to_view, embeds_to_view, sync_panel_message
 
 
@@ -36,13 +39,13 @@ class Warn(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.color = discord.Color.from_rgb(0, 0, 0)
-        self.db_path = "db/warn.db"
+        self.db_path = "warn.db"
 
-        
-        asyncio.create_task(self.setup())
+    async def cog_load(self) -> None:
+        await self.setup()
 
     def get_user_avatar(self, user):
-        return user.avatar.url if user.avatar else user.default_avatar.url
+        return user.display_avatar.url
 
     async def add_warn(self, guild_id: int, user_id: int):
         async with connect(self.db_path) as db:
@@ -75,8 +78,8 @@ class Warn(commands.Cog):
                 )
                 """)
                 await db.commit()
-        except Exception as e:
-            print(f"Error during database setup: {e}")
+        except Exception:
+            log.exception("Error during warn database setup")
 
     @commands.hybrid_command(
         name="warn",
@@ -141,7 +144,7 @@ class Warn(commands.Cog):
             view.message = message
         except Exception as e:
             await ctx.send(f"An error occurred: {str(e)}")
-            print(f"Error during warn command: {e}")
+            log.exception("Error during warn command")
 
     @commands.hybrid_command(
         name="clearwarns",
@@ -166,7 +169,7 @@ class Warn(commands.Cog):
             await ctx.send(view = embed_to_view(embed))
         except Exception as e:
             await ctx.send(f"An error occurred: {str(e)}")
-            print(f"Error during clearwarns command: {e}")
+            log.exception("Error during clearwarns command")
 
 
 """

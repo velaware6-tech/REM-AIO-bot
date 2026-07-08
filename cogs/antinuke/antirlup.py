@@ -3,7 +3,11 @@ import discord
 from discord.ext import commands
 import asyncio
 import datetime
+import logging
 import pytz
+
+log = logging.getLogger(__name__)
+
 
 class AntiRoleUpdate(commands.Cog):
     def __init__(self, bot):
@@ -106,7 +110,7 @@ class AntiRoleUpdate(commands.Cog):
                 )
                 return
             except discord.Forbidden:
-                print(f"Failed to ban {executor.id} or revert the role update {before.id} due to missing permissions.")
+                log.warning("Failed to ban %s or revert role %s: missing permissions", executor.id, before.id)
                 return
             except discord.HTTPException as e:
                 if e.status == 429:
@@ -129,7 +133,7 @@ class AntiRoleUpdate(commands.Cog):
                 await guild.ban(executor, reason="Role Update | Unwhitelisted User")
                 return
             except discord.Forbidden:
-                print(f"Failed to ban {executor.id} due to missing permissions.")
+                log.warning("Failed to ban %s for role update: missing permissions", executor.id)
                 return
             except discord.HTTPException as e:
                 if e.status == 429:

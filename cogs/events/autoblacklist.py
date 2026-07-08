@@ -1,12 +1,17 @@
 from utils.database import connect
 from utils import emojis
 
+import logging
+
 import discord
 from core import Rem, Cog
 from discord.ext import commands
 import aiosqlite
 from datetime import datetime, timedelta
 from utils.cv2_compat import embed_to_view, embeds_to_view
+
+log = logging.getLogger(__name__)
+
 
 class AutoBlacklist(Cog):
     def __init__(self, client: Rem):
@@ -16,7 +21,7 @@ class AutoBlacklist(Cog):
         self.last_spam = {}
         self.spam_threshold = 5
         self.spam_window = timedelta(minutes=10)
-        self.db_path = 'db/block.db'
+        self.db_path = 'block.db'
         self.bot_user_id = self.client.user.id if self.client.user else None
         self.guild_command_tracking = {}  
 
@@ -43,8 +48,8 @@ class AutoBlacklist(Cog):
                         INSERT OR IGNORE INTO user_blacklist (user_id, timestamp) VALUES (?, ?)
                     ''', (user_id, timestamp))
                 await db.commit()
-        except aiosqlite.Error as e:
-            print(f"Database error: {e}")
+        except aiosqlite.Error:
+            log.exception("Blacklist database error")
 
     async def check_and_blacklist_guild(self, guild_id):
         async with connect(self.db_path) as db:

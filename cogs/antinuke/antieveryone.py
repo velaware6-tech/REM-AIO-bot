@@ -3,7 +3,11 @@ import discord
 from discord.ext import commands
 import asyncio
 import datetime
+import logging
 from datetime import timedelta
+
+log = logging.getLogger(__name__)
+
 
 class AntiEveryone(commands.Cog):
     def __init__(self, bot):
@@ -59,8 +63,8 @@ class AntiEveryone(commands.Cog):
             try:
                 await self.timeout_user(message.author)
                 await self.delete_everyone_messages(message.channel)
-            except Exception as e:
-                print(f"An unexpected error occurred while handling {message.author.id}: {e}")
+            except Exception:
+                log.exception("Antinuke everyone handler failed for user %s", message.author.id)
 
     async def timeout_user(self, user):
         retries = 3
@@ -71,26 +75,24 @@ class AntiEveryone(commands.Cog):
                 return  
             except discord.Forbidden:
                 return
-            except discord.HTTPException as e:
-                print(f"Failed to timeout {user.id} due to HTTPException: {e}")
-                if e.status == 429:
-                    retry_after = e.response.headers.get('Retry-After')
+            except discord.HTTPException as exc:
+                log.warning("Failed to timeout %s: %s", user.id, exc)
+                if exc.status == 429:
+                    retry_after = exc.response.headers.get('Retry-After') if exc.response else None
                     if retry_after:
-                        retry_after = float(retry_after)
-                        print(f"Rate limit encountered while timing out. Retrying after {retry_after} seconds.")
-                        await asyncio.sleep(retry_after)
+                        await asyncio.sleep(float(retry_after))
                         retries -= 1
                 else:
                     return
-            except discord.errors.RateLimited as e:
-                print(f"Rate limit encountered while timing out: {e}. Retrying in {e.retry_after} seconds.")
-                await asyncio.sleep(e.retry_after)
+            except discord.errors.RateLimited as exc:
+                log.warning("Rate limited while timing out %s; retrying in %ss", user.id, exc.retry_after)
+                await asyncio.sleep(exc.retry_after)
                 retries -= 1
-            except Exception as e:
-                print(f"An unexpected error occurred while timing out {user.id}: {e}")
+            except Exception:
+                log.exception("Unexpected error while timing out %s", user.id)
                 return
 
-        print(f"Failed to timeout {user.id} after multiple attempts due to rate limits.")
+        log.warning("Failed to timeout %s after multiple attempts", user.id)
 
     async def delete_everyone_messages(self, channel):
         retries = 3
@@ -103,23 +105,21 @@ class AntiEveryone(commands.Cog):
                 return  
             except discord.Forbidden:
                 return
-            except discord.HTTPException as e:
-                print(f"Failed to delete messages due to HTTPException: {e}")
-                if e.status == 429:
-                    retry_after = e.response.headers.get('Retry-After')
+            except discord.HTTPException as exc:
+                log.warning("Failed to delete everyone messages: %s", exc)
+                if exc.status == 429:
+                    retry_after = exc.response.headers.get('Retry-After') if exc.response else None
                     if retry_after:
-                        retry_after = float(retry_after)
-                        print(f"Rate limit encountered while deleting messages. Retrying after {retry_after} seconds.")
-                        await asyncio.sleep(retry_after)
+                        await asyncio.sleep(float(retry_after))
                         retries -= 1
                 else:
                     return
-            except discord.errors.RateLimited as e:
-                print(f"Rate limit encountered while deleting messages: {e}. Retrying in {e.retry_after} seconds.")
-                await asyncio.sleep(e.retry_after)
+            except discord.errors.RateLimited as exc:
+                log.warning("Rate limited while deleting everyone messages; retrying in %ss", exc.retry_after)
+                await asyncio.sleep(exc.retry_after)
                 retries -= 1
-            except Exception as e:
-                print(f"An unexpected error occurred while deleting messages: {e}")
+            except Exception:
+                log.exception("Unexpected error while deleting everyone messages")
                 return
 
-        print(f"Failed to delete messages after multiple attempts due to rate limits.")
+        log.warning("Failed to delete everyone messages after multiple attempts")

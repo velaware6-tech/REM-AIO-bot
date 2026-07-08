@@ -10,8 +10,11 @@ from utils.cv2_compat import embed_to_view, embeds_to_view
 class NotifCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.db_path = "db/notify.db"
-        self.loop_task = asyncio.create_task(self.setup_db())
+        self.db_path = "notify.db"
+        self.loop_task = None
+
+    async def cog_load(self) -> None:
+        await self.setup_db()
 
     async def setup_db(self):
         async with connect(self.db_path) as db:

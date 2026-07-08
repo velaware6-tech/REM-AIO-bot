@@ -10,8 +10,10 @@ from utils.cv2_compat import embed_to_view, embeds_to_view
 class Invcrole(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.db_path = 'db/invc.db'
-        asyncio.create_task(self.create_table())
+        self.db_path = 'invc.db'
+
+    async def cog_load(self) -> None:
+        await self.create_table()
 
     async def create_table(self):
         async with connect(self.db_path) as db:
