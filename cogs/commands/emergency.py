@@ -1,7 +1,6 @@
 from utils.database import connect
 from utils import emojis
 
-import asyncio
 import discord
 from discord.ext import commands
 from utils.Tools import *
@@ -36,8 +35,10 @@ class Emergency(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.db_path = "db/emergency.db"
-        asyncio.create_task(self.initialize_database())
+        self.db_path = "emergency.db"
+
+    async def cog_load(self) -> None:
+        await self.initialize_database()
 
     async def initialize_database(self):
         async with connect(self.db_path) as db:

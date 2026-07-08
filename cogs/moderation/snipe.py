@@ -40,7 +40,7 @@ class SnipeView(discord.ui.View):
             attachment_links = "\n".join([f"[{attachment['name']}]({attachment['url']})" for attachment in snipe['attachments']])
             embed.add_field(name="**Attachments:**", value=attachment_links)
 
-        embed.set_footer(text=f"Total Deleted Messages: {len(self.snipes)} | Requested by {interaction.user}", icon_url=interaction.user.avatar.url)
+        embed.set_footer(text=f"Total Deleted Messages: {len(self.snipes)} | Requested by {interaction.user}", icon_url=interaction.user.display_avatar.url)
         await interaction.response.edit_message(view = embed_to_view(embed, view = self))
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:

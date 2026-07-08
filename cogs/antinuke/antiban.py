@@ -10,8 +10,7 @@ from cogs.antinuke._helpers import (
     AuditRateLimiter,
     fetch_recent_audit_entry,
     is_antinuke_enabled,
-    is_trusted_actor,
-    is_whitelisted,
+    should_skip_antinuke_actor,
 )
 
 log = logging.getLogger(__name__)
@@ -38,9 +37,7 @@ class AntiBan(commands.Cog):
             return
 
         executor = entry.user
-        if is_trusted_actor(guild, executor.id, self.bot.user.id):
-            return
-        if await is_whitelisted(guild.id, executor.id, "ban"):
+        if await should_skip_antinuke_actor(guild, executor.id, self.bot.user.id, "ban"):
             return
 
         await self._ban_executor(guild, executor, user)

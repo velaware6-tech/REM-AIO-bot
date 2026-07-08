@@ -87,7 +87,8 @@ class AddOptionModal(discord.ui.Modal, title="Add Ticket Option"):
             "emoji": emoji,
             "staff_role": staff_role_id
         })
-        await interaction.response.edit_message(content="Option added.", view = embed_to_view(self.view.embed, view = self.view))
+        self.view.embed.description = "Option added. Continue configuring the ticket panel below."
+        await interaction.response.edit_message(view=embed_to_view(self.view.embed, view=self.view))
 
 class TicketSetupView(discord.ui.View):
     def __init__(self, bot, author):

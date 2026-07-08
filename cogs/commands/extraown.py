@@ -55,7 +55,7 @@ class Extraowner(commands.Cog):
             embed.add_field(name="__**Extraowner Set**__", value=f"To Set Extra Owner, Use - **{pre}extraowner set @user**")
             embed.add_field(name="__**Extraowner Reset**__", value=f"To Reset Extra Owner, Use - **{pre}extraowner reset**")
             embed.add_field(name="__**Extraowner View**__", value=f"To View Extra Owner, Use - **{pre}extraowner view**")
-            embed.set_thumbnail(url=ctx.bot.user.avatar.url)
+            embed.set_thumbnail(url=ctx.bot.user.display_avatar.url)
             await ctx.reply(view = embed_to_view(embed))
             return
 

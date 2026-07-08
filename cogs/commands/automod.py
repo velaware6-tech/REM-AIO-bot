@@ -201,7 +201,7 @@ class Automod(commands.Cog):
             if interaction.user != ctx.author:
                 await interaction.response.send_message("You are not allowed to interact with this menu.", ephemeral=True)
                 return
-            selected_events = select_menu.values
+            selected_events = interaction.data.get("values") or select_menu.values
             await self.enable_automod(ctx, guild_id, selected_events, interaction)
         select_menu.callback = select_callback
 
@@ -714,6 +714,7 @@ class Automod(commands.Cog):
         async with connect('automod.db') as db:
             await db.execute("DELETE FROM automod_ignored WHERE guild_id = ?", (guild_id,))
             await db.commit()
+        await self._refresh_automod_cache(guild_id)
         embed=discord.Embed(title=f"Automod Settings for {ctx.guild.name}", description=f"** {emojis.TICK} | All ignored channels and roles have been reset!**\n\nTo view current Automod settings use `{ctx.prefix}automod config`", color=0x000000)
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
         embed.set_footer(text=f"“{ctx.command.qualified_name}” Command executed by {ctx.author}",
@@ -870,7 +871,7 @@ class Automod(commands.Cog):
         embed = discord.Embed(
             title="Disable Automod Confirmation",
             description="**Are you sure you want to disable Automod?**\n\nThis will remove all custom event settings, punishments, ignored roles/channels, & logging channel data.",
-            color=0x0000000
+            color=0x000000
         )
         embed.set_footer(text="Click 'Yes' to disable Automod or 'No' to cancel.")
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
@@ -1009,9 +1010,10 @@ class Automod(commands.Cog):
         async with connect('automod.db') as db:
             await db.execute("INSERT OR REPLACE INTO automod_logging (guild_id, log_channel) VALUES (?, ?)", (guild_id, channel.id))
             await db.commit()
-            embed=discord.Embed(title=f"Automod Settings for {ctx.guild.name}", description=f"**{emojis.TICK} | Automoderation Logging channel set to {channel.mention}.**\n\n➜ Use `{ctx.prefix}automod config` to view current Automod settings.", color=0x000000)
-            embed.set_footer(text=f"“{ctx.command.qualified_name}” Command executed by {ctx.author}",
-                   icon_url=ctx.author.avatar.url if ctx.author.avatar else ctx.author.default_avatar.url)
+        await self._refresh_automod_cache(guild_id)
+        embed=discord.Embed(title=f"Automod Settings for {ctx.guild.name}", description=f"**{emojis.TICK} | Automoderation Logging channel set to {channel.mention}.**\n\n➜ Use `{ctx.prefix}automod config` to view current Automod settings.", color=0x000000)
+        embed.set_footer(text=f"“{ctx.command.qualified_name}” Command executed by {ctx.author}",
+               icon_url=ctx.author.avatar.url if ctx.author.avatar else ctx.author.default_avatar.url)
         await ctx.send(view = embed_to_view(embed))
 
 

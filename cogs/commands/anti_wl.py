@@ -238,11 +238,16 @@ class Whitelist(commands.Cog):
 
                 
                 for value in interaction.data["values"]:
+                    if value not in fields:
+                        continue
                     await self.db.execute(
                         f"UPDATE whitelisted_users SET {value} = ? WHERE guild_id = ? AND user_id = ?",
-                        (True, ctx.guild.id, member.id)
+                        (True, ctx.guild.id, member.id),
                     )
-                    embed_description = embed_description.replace(f"{emojis.CROSSICON}{emojis.TICK} : **{fields[value]}**", f"{emojis.CROSSICON}{emojis.TICK} : **{fields[value]}**")
+                    embed_description = embed_description.replace(
+                        f"{emojis.CROSSICON}{emojis.TICK} : **{fields[value]}**",
+                        f"{emojis.TICK} : **{fields[value]}**",
+                    )
 
                 await self.db.commit()
 

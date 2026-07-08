@@ -3,15 +3,17 @@ from utils import emojis
 
 import discord
 from discord.ext import commands
-import asyncio
 from utils.Tools import bot_has_permissions, security_manager_check
+from utils.security import get_security_gate
 from utils.cv2_compat import embed_to_view, embeds_to_view, sync_panel_message
 
 class TopCheck(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.db_path = "db/topcheck.db"
-        asyncio.create_task(self.setup())
+        self.db_path = "topcheck.db"
+
+    async def cog_load(self) -> None:
+        await self.setup()
 
     async def setup(self):
         async with connect(self.db_path) as db:
@@ -65,7 +67,7 @@ class TopCheck(commands.Cog):
         f"• `{ctx.prefix}topcheck disable` - Disables top check for the server."
     ),
                               color=0x000000)
-        embed.set_footer(text=f"Requested by {ctx.author}", icon_url=ctx.author.avatar.url)
+        embed.set_footer(text=f"Requested by {ctx.author}", icon_url=ctx.author.display_avatar.url)
         await ctx.send(view = embed_to_view(embed))
 
     @topcheck.command(
@@ -81,6 +83,7 @@ class TopCheck(commands.Cog):
         if await self.is_topcheck_enabled(ctx.guild.id):
             return await ctx.reply(f"{emojis.CROSSICON} Topcheck is already enabled for this server.")
         await self.enable_topcheck(ctx.guild.id)
+        await get_security_gate().invalidate_topcheck(ctx.guild.id)
         await ctx.reply(f"{emojis.TICK} Topcheck has been Successfully enabled for this server.")
 
     @topcheck.command(
@@ -96,6 +99,7 @@ class TopCheck(commands.Cog):
         if not await self.is_topcheck_enabled(ctx.guild.id):
             return await ctx.reply(f"{emojis.CROSSICON} Topcheck is not enabled for this server.")
         await self.disable_topcheck(ctx.guild.id)
+        await get_security_gate().invalidate_topcheck(ctx.guild.id)
         await ctx.reply(f"{emojis.TICK} Topcheck has been Successfully disabled for this server.")
 
 """

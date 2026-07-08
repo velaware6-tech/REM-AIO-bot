@@ -221,7 +221,7 @@ class Giveaway(commands.Cog):
 
         embed.timestamp = embed.timestamp = ends_utc
         embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1267699441394126940.png")
-        embed.set_footer(text=f"Ends at", icon_url=ctx.bot.user.avatar.url)
+        embed.set_footer(text=f"Ends at", icon_url=ctx.bot.user.display_avatar.url)
 
         message = await ctx.send(f"{emojis.GIVEAWAY} **GIVEAWAY** {emojis.GIVEAWAY}", view = embed_to_view(embed))
         try:

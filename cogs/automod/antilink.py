@@ -106,7 +106,7 @@ class AntiLink(commands.Cog):
                 simple_embed = discord.Embed(title="Automod Anti-Link", color=0xff0000)
                 simple_embed.description = f"{emojis.TICK} | {user.mention} has been successfully **{action_taken}** for **Posting a link.**"
                 
-                simple_embed.set_footer(text="Use the “automod logging” command to get automod logs if it is not enabled.", icon_url=self.bot.user.avatar.url)
+                simple_embed.set_footer(text="Use the “automod logging” command to get automod logs if it is not enabled.", icon_url=self.bot.user.display_avatar.url)
                 await channel.send(view = embed_to_view(simple_embed), delete_after=30)
 
                 await log_automod_action(
