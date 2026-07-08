@@ -138,10 +138,6 @@ class Owner(commands.Cog):
     
 
     async def load_staff(self):
-        try:
-            await self.client.wait_until_ready()
-        except RuntimeError:
-            pass
         async with connect(self.db_path) as db:
             async with db.execute('SELECT id FROM staff') as cursor:
                 self.staff = {row[0] for row in await cursor.fetchall()}
