@@ -26,13 +26,11 @@ from datetime import datetime, timezone, timedelta
 from typing import *
 import string
 from utils.cv2_compat import embed_to_view, embeds_to_view
-#from cogs.commands.moderation import do_removal
 
 lawda = [
   '8', '3821', '23', '21', '313', '43', '29', '76', '11', '9',
   '44', '470', '318' , '26', '69'
 ]
-
 
 
 class AvatarView(View):
@@ -68,7 +66,7 @@ class AvatarView(View):
     else:
       embed = interaction.message.embeds[0]
       embed.set_image(url=self.member.guild_avatar.url)
-      await interaction.response.edit_message(view = embed_to_view(embed))
+      await interaction.response.edit_message(view=embed_to_view(embed))
 
   @discord.ui.button(label='User Banner', style=discord.ButtonStyle.success, custom_id='banner_button')
   async def banner(self, interaction: discord.Interaction, button: Button):
@@ -80,17 +78,13 @@ class AvatarView(View):
     else:
       embed = interaction.message.embeds[0]
       embed.set_image(url=self.banner_url)
-      await interaction.response.edit_message(view = embed_to_view(embed))
-
-
-
+      await interaction.response.edit_message(view=embed_to_view(embed))
 
 
 class General(commands.Cog):
 
   def __init__(self, bot, *args, **kwargs):
     self.bot = bot
-
     self.aiohttp = aiohttp.ClientSession()
     self._URL_REGEX = r'(?P<url><[^: >]+:\/[^ >]+>|(?:https?|steam):\/\/[^\s<]+[^<.,:;\"\'\]\s])'
     self.color = 0x000000
@@ -98,7 +92,6 @@ class General(commands.Cog):
   async def cog_unload(self) -> None:
     if not self.aiohttp.closed:
       await self.aiohttp.close()
-
 
   @commands.hybrid_command(
     usage="Avatar <member>",
@@ -129,14 +122,16 @@ class General(commands.Cog):
       )
       embed.set_author(name=f"{member}", icon_url=member.avatar.url if member.avatar else member.default_avatar.url)
       embed.set_image(url=user.avatar.url)
-      embed.set_footer(text=f"Requested By {ctx.author}",
-                       icon_url=ctx.author.avatar.url if ctx.author.avatar else ctx.author.default_avatar.url)
+      embed.set_footer(
+        text=f"Requested By {ctx.author}",
+        icon_url=ctx.author.avatar.url if ctx.author.avatar else ctx.author.default_avatar.url
+      )
 
       view = AvatarView(user, member, ctx.author.id, banner_url)
-      await ctx.send(view = embed_to_view(embed, view = view))
+      await ctx.send(view=embed_to_view(embed, view=view))
     except Exception as e:
       print(f"Error: {e}")
-      
+
   @commands.hybrid_command(
     name="servericon",
     help="Get the server icon",
@@ -174,40 +169,38 @@ class General(commands.Cog):
     view = discord.ui.View()
     view.add_item(Button(label="Download Icon", url=server.icon.url, style=ButtonStyle.link))
 
-    await ctx.send(view = embed_to_view(avemb, view = view))
+    await ctx.send(view=embed_to_view(avemb, view=view))
 
-
-
-  @commands.hybrid_command(name="membercount",
-                           help="Get total member count of the server",
-                           usage="membercount",
-                           aliases=["mc"])
+  @commands.hybrid_command(
+    name="membercount",
+    help="Get total member count of the server",
+    usage="membercount",
+    aliases=["mc"]
+  )
   @blacklist_check()
   @ignore_check()
   @commands.cooldown(1, 2, commands.BucketType.user)
   async def membercount(self, ctx: commands.Context):
-        total_members = len(ctx.guild.members)
-        total_humans = len([member for member in ctx.guild.members if not member.bot])
-        total_bots = len([member for member in ctx.guild.members if member.bot])
+    total_members = len(ctx.guild.members)
+    total_humans = len([member for member in ctx.guild.members if not member.bot])
+    total_bots = len([member for member in ctx.guild.members if member.bot])
 
-        online = len([member for member in ctx.guild.members if member.status == discord.Status.online])
-        offline = len([member for member in ctx.guild.members if member.status == discord.Status.offline])
-        idle = len([member for member in ctx.guild.members if member.status == discord.Status.idle])
-        dnd = len([member for member in ctx.guild.members if member.status == discord.Status.do_not_disturb])
+    online = len([member for member in ctx.guild.members if member.status == discord.Status.online])
+    offline = len([member for member in ctx.guild.members if member.status == discord.Status.offline])
+    idle = len([member for member in ctx.guild.members if member.status == discord.Status.idle])
+    dnd = len([member for member in ctx.guild.members if member.status == discord.Status.do_not_disturb])
 
+    embed = discord.Embed(
+      title="Members",
+      description=(
+        f"**Total:** `{total_members}`\n"
+        f"**Humans:** `{total_humans}` | **Bots:** `{total_bots}`\n"
+        f"**Online:** `{online}` | **Idle:** `{idle}` | **DND:** `{dnd}` | **Offline:** `{offline}`"
+      ),
+      color=0x000000
+    )
 
-
-        embed = discord.Embed(
-          title="Members",
-          description=(
-            f"**Total:** `{total_members}`\n"
-            f"**Humans:** `{total_humans}` | **Bots:** `{total_bots}`\n"
-            f"**Online:** `{online}` | **Idle:** `{idle}` | **DND:** `{dnd}` | **Offline:** `{offline}`"
-          ),
-          color=0x000000
-        )
-
-        await ctx.send(view = embed_to_view(embed))
+    await ctx.send(view=embed_to_view(embed))
 
   @commands.hybrid_command(name="poll", usage="Poll <message>")
   @blacklist_check()
@@ -215,17 +208,20 @@ class General(commands.Cog):
   @commands.cooldown(1, 3, commands.BucketType.user)
   async def poll(self, ctx: commands.Context, *, message):
     author = ctx.author
-    emp = discord.Embed(title=f"**Poll raised by {author}!**",
-                        description=f"{message}",
-                        color=self.color)
-    msg = await ctx.send(view = embed_to_view(emp))
+    emp = discord.Embed(
+      title=f"**Poll raised by {author}!**",
+      description=f"{message}",
+      color=self.color
+    )
+    msg = await ctx.send(view=embed_to_view(emp))
     await msg.add_reaction(f"{emojis.TICK}")
     await msg.add_reaction(f"{emojis.CROSSICON}")
 
-  
-  @commands.command(name="hack",
+  @commands.command(
+    name="hack",
     help="hack someone's discord account",
-    usage="Hack <member>")
+    usage="Hack <member>"
+  )
   @blacklist_check()
   @ignore_check()
   @commands.cooldown(1, 3, commands.BucketType.user)
@@ -240,28 +236,27 @@ class General(commands.Cog):
     random_chars = random.choices(all_chars, k=remaining_length)
 
     password = stringg + ''.join(random_chars)
-    
+
     lund = await ctx.send(f"Processing to Hack {member.mention}...")
     await asyncio.sleep(2)
     random_pass = random.choice(lawda)
-    
+
     random_pass2 = ''.join(random.choices(string.ascii_letters + string.digits, k=3))
     embed = discord.Embed(
-  title=f"**Hacked {member.display_name}!**",
-  description=(
-  f"User - {member.mention}\n"
-  f"E-Mail - {''.join(letter for letter in stringi if letter.isalnum())}{random_pass}@gmail.com\n"
-  f"Account Password - {member.name}@{random_pass2}"
-  ),
-  color=0x000000
-  )
+      title=f"**Hacked {member.display_name}!**",
+      description=(
+        f"User - {member.mention}\n"
+        f"E-Mail - {''.join(letter for letter in stringi if letter.isalnum())}{random_pass}@gmail.com\n"
+        f"Account Password - {member.name}@{random_pass2}"
+      ),
+      color=0x000000
+    )
     embed.set_footer(
-  text=f"Hacked By {ctx.author}",
-  icon_url=ctx.author.avatar.url if ctx.author.avatar else ctx.author.default_avatar.url
-  )
-    await ctx.send(view = embed_to_view(embed))
+      text=f"Hacked By {ctx.author}",
+      icon_url=ctx.author.avatar.url if ctx.author.avatar else ctx.author.default_avatar.url
+    )
+    await ctx.send(view=embed_to_view(embed))
     await lund.delete()
-
 
   @commands.command(name="token", usage="Token <member>")
   @blacklist_check()
@@ -287,28 +282,25 @@ class General(commands.Cog):
   @ignore_check()
   @commands.cooldown(1, 3, commands.BucketType.user)
   async def users(self, ctx: commands.Context):
-    users = sum(g.member_count for g in self.bot.guilds
-                if g.member_count != None)
+    users = sum(g.member_count for g in self.bot.guilds if g.member_count is not None)
     guilds = len(self.bot.guilds)
     embed = discord.Embed(
       title=f"**REM ALL IN ONE BOT Users**",
       description=f"❯ Total of __**{users}**__ Users in **{guilds}** Guilds",
-      color=self.color)
-    await ctx.send(view = embed_to_view(embed))
-
+      color=self.color
+    )
+    await ctx.send(view=embed_to_view(embed))
 
   @commands.command(name="wizz", usage="Wizz")
   @blacklist_check()
   @ignore_check()
   @commands.cooldown(1, 3, commands.BucketType.user)
   async def wizz(self, ctx: commands.Context):
-    message6 = await ctx.send(
-      f"`Wizzing {ctx.guild.name}, will take 22 seconds to complete`")
+    message6 = await ctx.send(f"`Wizzing {ctx.guild.name}, will take 22 seconds to complete`")
     message7 = await ctx.send(f"Changing all guild settings...")
     message5 = await ctx.send(f"Deleting **{len(ctx.guild.roles)}** Roles...")
     await asyncio.sleep(1)
-    message4 = await ctx.send(
-      f"Deleting **{len(ctx.guild.channels)}** Channels...")
+    message4 = await ctx.send(f"Deleting **{len(ctx.guild.channels)}** Channels...")
     await asyncio.sleep(1)
     message3 = await ctx.send(f"Deleting Webhooks...")
     message2 = await ctx.send(f"Deleting emojis")
@@ -326,60 +318,62 @@ class General(commands.Cog):
       title=f"{self.bot.user.name}",
       description=f"**{emojis.ICONS_WARNING} Successfully Wizzed {ctx.guild.name}**",
       color=self.color,
-      timestamp=ctx.message.created_at)
+      timestamp=ctx.message.created_at
+    )
     embed.set_footer(
       text=f"Wizzed By {ctx.author}",
       icon_url=ctx.author.avatar.url if ctx.author.avatar else ctx.author.default_avatar.url
-      )
-    await ctx.send(view = embed_to_view(embed))
-
+    )
+    await ctx.send(view=embed_to_view(embed))
 
   @commands.hybrid_command(
     name="urban",
     description="Searches for specified phrase on urbandictionary",
     help="Get meaning of specified phrase",
-    usage="Urban <phrase>")
+    usage="Urban <phrase>"
+  )
   @blacklist_check()
   @ignore_check()
   @commands.cooldown(1, 3, commands.BucketType.user)
   async def urban(self, ctx: commands.Context, *, phrase):
     async with self.aiohttp.get(
-        "http://api.urbandictionary.com/v0/define?term={}".format(
-          phrase)) as urb:
+      "http://api.urbandictionary.com/v0/define?term={}".format(phrase)
+    ) as urb:
       urban = await urb.json()
       try:
         embed = discord.Embed(title=f"Meaning of \"{phrase}\"", color=self.color)
-        embed.add_field(name="__Definition:__",
-                        value=urban['list'][0]['definition'].replace(
-                          '[', '').replace(']', ''))
-        embed.add_field(name="__Example:__",
-                        value=urban['list'][0]['example'].replace('[',
-                                                                  '').replace(
-                                                                    ']', ''))
-
-        embed.add_field(name="__Author:__",
-                        value=urban['list'][0]['author'].replace('[',
-                                                                  '').replace(
-                                                                    ']', ''))
-
-        embed.add_field(name="__Written On:__",
-                        value=urban['list'][0]['written_on'].replace('[',
-                                                                  '').replace(
-                                                                    ']', ''))
+        embed.add_field(
+          name="__Definition:__",
+          value=urban['list'][0]['definition'].replace('[', '').replace(']', '')
+        )
+        embed.add_field(
+          name="__Example:__",
+          value=urban['list'][0]['example'].replace('[', '').replace(']', '')
+        )
+        embed.add_field(
+          name="__Author:__",
+          value=urban['list'][0]['author'].replace('[', '').replace(']', '')
+        )
+        embed.add_field(
+          name="__Written On:__",
+          value=urban['list'][0]['written_on'].replace('[', '').replace(']', '')
+        )
         embed.set_footer(
-      text=f"Requested By {ctx.author}",
-      icon_url=ctx.author.avatar.url if ctx.author.avatar else ctx.author.default_avatar.url
-      )
-        temp = await ctx.reply(view = embed_to_view(embed), mention_author=True)
+          text=f"Requested By {ctx.author}",
+          icon_url=ctx.author.avatar.url if ctx.author.avatar else ctx.author.default_avatar.url
+        )
+        temp = await ctx.reply(view=embed_to_view(embed), mention_author=True)
         await asyncio.sleep(45)
         await temp.delete()
         await ctx.message.delete()
       except:
         pass
 
-  @commands.command(name="rickroll",
-                           help="Detects if provided url is a rick-roll",
-                           usage="Rickroll <url>")
+  @commands.command(
+    name="rickroll",
+    help="Detects if provided url is a rick-roll",
+    usage="Rickroll <url>"
+  )
   @blacklist_check()
   @ignore_check()
   @commands.cooldown(1, 3, commands.BucketType.user)
@@ -390,18 +384,22 @@ class General(commands.Cog):
     phrases = [
       "rickroll", "rick roll", "rick astley", "never gonna give you up"
     ]
-    source = str(await (await self.aiohttp.get(
-      url, allow_redirects=True)).content.read()).lower()
-    rickRoll = bool((re.findall('|'.join(phrases), source,
-                                re.MULTILINE | re.IGNORECASE)))
-    await ctx.reply(view = embed_to_view(discord.Embed(
-      title="Rick Roll {} in webpage".format(
-        "was found" if rickRoll is True else "was not found"),
-      color=Color.red() if rickRoll is True else Color.green(),
-    )), mention_author=True)
+    source = str(await (await self.aiohttp.get(url, allow_redirects=True)).content.read()).lower()
+    rickRoll = bool((re.findall('|'.join(phrases), source, re.MULTILINE | re.IGNORECASE)))
+    await ctx.reply(
+      view=embed_to_view(
+        discord.Embed(
+          title="Rick Roll {} in webpage".format("was found" if rickRoll is True else "was not found"),
+          color=Color.red() if rickRoll is True else Color.green(),
+        )
+      ),
+      mention_author=True
+    )
 
-  @commands.command(name="hash",
-                           help="Hashes provided text with provided algorithm")
+  @commands.command(
+    name="hash",
+    help="Hashes provided text with provided algorithm"
+  )
   @blacklist_check()
   @ignore_check()
   @commands.cooldown(1, 3, commands.BucketType.user)
@@ -420,45 +418,42 @@ class General(commands.Cog):
       "blake2b": hashlib.blake2b(bytes(message.encode("utf-8"))).hexdigest(),
       "blake2s": hashlib.blake2s(bytes(message.encode("utf-8"))).hexdigest()
     }
-    embed = discord.Embed(color=0x000000,
-                          title="Hashed \"{}\"".format(message))
+    embed = discord.Embed(
+      color=0x000000,
+      title="Hashed \"{}\"".format(message)
+    )
     if algorithm.lower() not in list(algos.keys()):
       for algo in list(algos.keys()):
         hashValue = algos[algo]
         embed.add_field(name=algo, value="```{}```".format(hashValue))
     else:
-      embed.add_field(name=algorithm,
-                      value="```{}```".format(algos[algorithm.lower()]),
-                      inline=False)
-    await ctx.reply(view = embed_to_view(embed), mention_author=True)
+      embed.add_field(
+        name=algorithm,
+        value="```{}```".format(algos[algorithm.lower()]),
+        inline=False
+      )
+    await ctx.reply(view=embed_to_view(embed), mention_author=True)
 
-  
-  @commands.command(name="invite",
-                           aliases=['invite-bot'],
-                           description="Get Support & Bot invite link!")
+  @commands.command(
+    name="invite",
+    aliases=['invite-bot'],
+    description="Get Support & Bot invite link!"
+  )
   @blacklist_check()
   @ignore_check()
   @commands.cooldown(1, 3, commands.BucketType.user)
   async def invite(self, ctx: commands.Context):
     embed = discord.Embed(
       title="Invite",
-      description="Add REM ALL IN ONE BOT or join support.",
+      description="REM ALL IN ONE BOT",
       color=0x0ba7ff
     )
-
-    embed.set_footer(text=f"Requested by {ctx.author.name}",
-                     icon_url=ctx.author.avatar.url if ctx.author.avatar else ctx.author.default_avatar.url)
-    invite = Button(
-      label='Invite',
-      style=discord.ButtonStyle.link,
-      url=
-      'https://discord.com/oauth2/authorize?client_id=1313160406117646417&permissions=8&integration_type=0&scope=bot+applications.commands'
+    embed.set_footer(
+      text=f"Requested by {ctx.author.name}",
+      icon_url=ctx.author.avatar.url if ctx.author.avatar else ctx.author.default_avatar.url
     )
-    support = Button(label='Support',
-                    style=discord.ButtonStyle.link,
-                    url=f'https://discord.gg/stVsvE9rhT')
-    view = View()
-    view.add_item(invite)
-    view.add_item(support)
-    
-    await ctx.send(view = embed_to_view(embed, view = view))
+    await ctx.send(view=embed_to_view(embed))
+
+
+async def setup(bot):
+  await bot.add_cog(General(bot))
