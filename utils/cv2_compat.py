@@ -19,6 +19,14 @@ __all__ = (
 
 _MAX_TEXT_DISPLAY = 3800
 
+_SELECT_TYPES = (
+    discord.ui.Select,
+    discord.ui.UserSelect,
+    discord.ui.RoleSelect,
+    discord.ui.ChannelSelect,
+    discord.ui.MentionableSelect,
+)
+
 
 def _asset_url(value: Any) -> Optional[str]:
     url = getattr(value, "url", None)
@@ -65,7 +73,9 @@ def _add_embed_parts(container_children: list[discord.ui.Item], embed: discord.E
     if image_url:
         media_urls.append(image_url)
     if media_urls:
-        container_children.append(discord.ui.MediaGallery(*(discord.MediaGalleryItem(url) for url in media_urls)))
+        container_children.append(
+            discord.ui.MediaGallery(*(discord.MediaGalleryItem(url) for url in media_urls))
+        )
 
     if embed.fields:
         if embed.description or embed.title or author_name or media_urls:
@@ -118,12 +128,68 @@ def embeds_to_view(
 def _has_interactive_children(source: Optional[discord.ui.View]) -> bool:
     if source is None:
         return False
+
     for child in list(getattr(source, "children", ())):
         if isinstance(child, discord.ui.Button) and not child.url:
             return True
-        if isinstance(child, (discord.ui.Select, discord.ui.UserSelect, discord.ui.RoleSelect, discord.ui.ChannelSelect, discord.ui.MentionableSelect)):
+        if isinstance(child, _SELECT_TYPES):
             return True
+
     return False
+
+
+def _item_width(item: discord.ui.Item) -> int:
+    if isinstance(item, _SELECT_TYPES):
+        return 5
+
+    width = getattr(item, "width", None)
+    if isinstance(width, int) and 1 <= width <= 5:
+        return width
+
+    return 1
+
+
+def _pack_action_rows(items: list[discord.ui.Item]) -> list[discord.ui.ActionRow]:
+    rows: list[discord.ui.ActionRow] = []
+
+    explicit_rows: dict[int, list[discord.ui.Item]] = {}
+    automatic_items: list[discord.ui.Item] = []
+
+    for item in items:
+        row = getattr(item, "row", None)
+        if isinstance(row, int):
+            explicit_rows.setdefault(row, []).append(item)
+        else:
+            automatic_items.append(item)
+
+    def flush_group(group_items: list[discord.ui.Item]) -> None:
+        current: list[discord.ui.Item] = []
+        current_width = 0
+
+        for item in group_items:
+            item_width = _item_width(item)
+
+            if current and current_width + item_width > 5:
+                rows.append(discord.ui.ActionRow(*current))
+                current = []
+                current_width = 0
+
+            current.append(item)
+            current_width += item_width
+
+            if current_width == 5:
+                rows.append(discord.ui.ActionRow(*current))
+                current = []
+                current_width = 0
+
+        if current:
+            rows.append(discord.ui.ActionRow(*current))
+
+    for row_index in sorted(explicit_rows):
+        flush_group(explicit_rows[row_index])
+
+    flush_group(automatic_items)
+    return rows
 
 
 class PanelLayoutView(discord.ui.LayoutView):
@@ -151,8 +217,7 @@ class PanelLayoutView(discord.ui.LayoutView):
             interactive = list(controls.children)
             if interactive:
                 children.append(discord.ui.Separator())
-                for index in range(0, len(interactive), 5):
-                    children.append(discord.ui.ActionRow(*interactive[index : index + 5]))
+                children.extend(_pack_action_rows(interactive))
 
         self.add_item(discord.ui.Container(*children))
 
