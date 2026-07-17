@@ -1,13 +1,12 @@
 from utils import emojis
 
-import os
 import discord
 from discord.ext import commands
 from discord.ui import View, Select, Button
 import asyncio
+
 from utils.Tools import *
-import re
-from utils.cv2_compat import embed_to_view, embeds_to_view
+
 
 class Embed(commands.Cog):
     def __init__(self, bot):
@@ -19,124 +18,156 @@ class Embed(commands.Cog):
     @ignore_check()
     @commands.cooldown(1, 7, commands.BucketType.user)
     @commands.has_permissions(manage_messages=True)
-    async def _embed(self, ctx):
+    async def _embed(self, ctx: commands.Context):
         msgx = "Example embed. You can customize everything.\n*Respond within 30 seconds to avoid time out.*"
-        embed = discord.Embed(title="Edit your Embed!", 
-                              description="- Select Options what to edit from the below select menu.\n\nMust edit embed title & description to remove these instructions.", 
-                              color=0x000000)
+
+        embed = discord.Embed(
+            title="Edit your Embed!",
+            description="- Select Options what to edit from the below select menu.\n\nMust edit embed title & description to remove these instructions.",
+            color=0x000000
+        )
+
         interaction_user = ctx.author
 
-        def chk(m):
-            return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id and not m.author.bot
+        def chk(m: discord.Message):
+            return (
+                m.channel.id == ctx.channel.id
+                and m.author.id == ctx.author.id
+                and not m.author.bot
+            )
 
-        async def select_callback(interaction):
+        msg = None
+
+        async def refresh_message():
+            if msg:
+                await msg.edit(content=msgx, embed=embed, view=view)
+
+        async def select_callback(interaction: discord.Interaction):
             if interaction.user.id != interaction_user.id:
-                await interaction.response.send_message("Uh oh! That message doesn't belong to you.\nYou must run this command to interact with it.", ephemeral=True)
+                await interaction.response.send_message(
+                    "Uh oh! That message doesn't belong to you.\nYou must run this command to interact with it.",
+                    ephemeral=True
+                )
                 return
 
             await interaction.response.defer()
 
-            value = select.values[0]
+            selected_value = select.values[0]
 
-            if value == "Title":
+            if selected_value == "Title":
                 await ctx.send("Please enter the **Title of the embed**:")
                 try:
                     tit = await ctx.bot.wait_for("message", timeout=30, check=chk)
                     embed.title = tit.content
-                    await msg.edit(content=msgx, view = embed_to_view(embed))
+                    await refresh_message()
                 except asyncio.TimeoutError:
                     await ctx.send("Timed Out")
-            elif value == "Description":
+
+            elif selected_value == "Description":
                 await ctx.send("Please enter the **Description of the embed**:")
                 try:
                     desc = await ctx.bot.wait_for("message", timeout=30, check=chk)
                     embed.description = desc.content
-                    await msg.edit(content=msgx, view = embed_to_view(embed))
+                    await refresh_message()
                 except asyncio.TimeoutError:
                     await ctx.send("Timed Out")
-            elif value == "Color":
-                await ctx.send("Please enter the color of the embed as a hexadecimal value (e.g., #FF0000 for red):")
+
+            elif selected_value == "Color":
+                await ctx.send("Please enter the color of the embed as a hexadecimal value (e.g., `#FF0000` for red):")
                 try:
                     col = await ctx.bot.wait_for("message", timeout=30, check=chk)
-                    color = discord.Colour(int(col.content.strip("#"), 16))  # hex se int
+                    color = discord.Colour(int(col.content.strip().replace("#", ""), 16))
                     embed.color = color
-                    await msg.edit(content=msgx, view = embed_to_view(embed))
+                    await refresh_message()
                 except ValueError:
                     await ctx.send("Invalid color format. Please retry with a valid hexadecimal color value.")
                 except asyncio.TimeoutError:
                     await ctx.send("Timed Out")
-            elif value == "Thumbnail":
-                await ctx.send("Please enter the **URL of the thumbnail:**")
+
+            elif selected_value == "Thumbnail":
+                await ctx.send("Please enter the **URL of the thumbnail**:")
                 try:
                     thumb = await ctx.bot.wait_for("message", timeout=30, check=chk)
-                    if not thumb.content.startswith("http"):
+                    if not thumb.content.startswith(("http://", "https://")):
                         raise ValueError("Invalid URL format")
                     embed.set_thumbnail(url=thumb.content)
-                    await msg.edit(content=msgx, view = embed_to_view(embed))
+                    await refresh_message()
                 except ValueError as e:
                     await ctx.send(str(e))
                 except asyncio.TimeoutError:
                     await ctx.send("Timed Out")
-            elif value == "Image":
-                await ctx.send("Please enter the **URL of the image:**")
+
+            elif selected_value == "Image":
+                await ctx.send("Please enter the **URL of the image**:")
                 try:
                     img = await ctx.bot.wait_for("message", timeout=30, check=chk)
-                    if not img.content.startswith("http"):
+                    if not img.content.startswith(("http://", "https://")):
                         raise ValueError("Invalid URL format")
                     embed.set_image(url=img.content)
-                    await msg.edit(content=msgx, view = embed_to_view(embed))
+                    await refresh_message()
                 except ValueError as e:
                     await ctx.send(str(e))
                 except asyncio.TimeoutError:
                     await ctx.send("Timed Out")
-            elif value == "Footer Text":
-                await ctx.send("Please enter the **text of the footer:**")
+
+            elif selected_value == "Footer Text":
+                await ctx.send("Please enter the **text of the footer**:")
                 try:
                     foot = await ctx.bot.wait_for("message", timeout=30, check=chk)
-                    embed.set_footer(text=foot.content)
-                    await msg.edit(content=msgx, view = embed_to_view(embed))
+                    current_icon = embed.footer.icon_url if embed.footer else None
+                    embed.set_footer(text=foot.content, icon_url=current_icon)
+                    await refresh_message()
                 except asyncio.TimeoutError:
                     await ctx.send("Timed Out")
-            elif value == "Footer Icon":
-                await ctx.send("Please enter the **URL of the footer icon:**")
+
+            elif selected_value == "Footer Icon":
+                await ctx.send("Please enter the **URL of the footer icon**:")
                 try:
                     foot_icon = await ctx.bot.wait_for("message", timeout=30, check=chk)
-                    if not foot_icon.content.startswith("http"):
+                    if not foot_icon.content.startswith(("http://", "https://")):
                         raise ValueError("Invalid URL format")
-                    embed.set_footer(text=embed.footer.text or "Footer", icon_url=foot_icon.content)
-                    await msg.edit(content=msgx, view = embed_to_view(embed))
+                    current_text = embed.footer.text if embed.footer and embed.footer.text else "Footer"
+                    embed.set_footer(text=current_text, icon_url=foot_icon.content)
+                    await refresh_message()
                 except ValueError as e:
                     await ctx.send(str(e))
                 except asyncio.TimeoutError:
                     await ctx.send("Timed Out")
-            elif value == "Author Text":
-                await ctx.send("Please enter the **author text:**")
+
+            elif selected_value == "Author Text":
+                await ctx.send("Please enter the **author text**:")
                 try:
                     auth_text = await ctx.bot.wait_for("message", timeout=30, check=chk)
-                    embed.set_author(name=auth_text.content)
-                    await msg.edit(content=msgx, view = embed_to_view(embed))
+                    current_icon = embed.author.icon_url if embed.author else None
+                    current_url = embed.author.url if embed.author else None
+                    embed.set_author(name=auth_text.content, icon_url=current_icon, url=current_url)
+                    await refresh_message()
                 except asyncio.TimeoutError:
                     await ctx.send("Timed Out")
-            elif value == "Author Icon":
-                await ctx.send("Please enter the **URL of the author icon:**")
+
+            elif selected_value == "Author Icon":
+                await ctx.send("Please enter the **URL of the author icon**:")
                 try:
                     auth_icon = await ctx.bot.wait_for("message", timeout=30, check=chk)
-                    if not auth_icon.content.startswith("http"):
+                    if not auth_icon.content.startswith(("http://", "https://")):
                         raise ValueError("Invalid URL format")
-                    embed.set_author(name=embed.author.name or "Author", icon_url=auth_icon.content)
-                    await msg.edit(content=msgx, view = embed_to_view(embed))
+                    current_name = embed.author.name if embed.author and embed.author.name else "Author"
+                    current_url = embed.author.url if embed.author else None
+                    embed.set_author(name=current_name, icon_url=auth_icon.content, url=current_url)
+                    await refresh_message()
                 except ValueError as e:
                     await ctx.send(str(e))
                 except asyncio.TimeoutError:
                     await ctx.send("Timed Out")
-            elif value == "Add Field":
+
+            elif selected_value == "Add Field":
                 await ctx.send("**Enter Field title:**")
                 try:
-                    name = await ctx.bot.wait_for("message", timeout=30, check=chk)
+                    field_name = await ctx.bot.wait_for("message", timeout=30, check=chk)
                     await ctx.send("**Enter Field value:**")
-                    value = await ctx.bot.wait_for("message", timeout=30, check=chk)
-                    embed.add_field(name=name.content, value=value.content, inline=False)
-                    await msg.edit(content=msgx, view = embed_to_view(embed))
+                    field_value = await ctx.bot.wait_for("message", timeout=30, check=chk)
+                    embed.add_field(name=field_name.content, value=field_value.content, inline=False)
+                    await refresh_message()
                 except asyncio.TimeoutError:
                     await ctx.send("Timed Out")
 
@@ -144,6 +175,7 @@ class Embed(commands.Cog):
             placeholder="Choose an option to edit the Embed",
             min_values=1,
             max_values=1,
+            row=0,
             options=[
                 discord.SelectOption(label="Title", description="Edit the title of the embed"),
                 discord.SelectOption(label="Description", description="Edit the description of the embed"),
@@ -155,38 +187,68 @@ class Embed(commands.Cog):
                 discord.SelectOption(label="Footer Icon", description="Edit the footer icon of the embed"),
                 discord.SelectOption(label="Author Text", description="Edit the author text of the embed"),
                 discord.SelectOption(label="Author Icon", description="Edit the author icon of the embed"),
-                
             ]
         )
         select.callback = select_callback
 
-        async def send_callback(interaction):
+        async def send_callback(interaction: discord.Interaction):
             if interaction.user.id != interaction_user.id:
-                await interaction.response.send_message("Uh oh! That message doesn't belong to you.\nYou must run this command to interact with it.", ephemeral=True)
+                await interaction.response.send_message(
+                    "Uh oh! That message doesn't belong to you.\nYou must run this command to interact with it.",
+                    ephemeral=True
+                )
                 return
+
             await interaction.response.defer()
             await ctx.send("Please mention the **channel** where you want to send this embed:")
+
             try:
-                tit = await ctx.bot.wait_for("message", timeout=30, check=chk)
-                chnl = tit.channel_mentions[0]
-                await chnl.send(view = embed_to_view(embed))
-                await ctx.send(view = embed_to_view(discord.Embed(title=f"{emojis.TICK} Success",
-                                                   description="Sent the embed message to the mentioned channel",
-                                                   color=0x000000)))
+                channel_message = await ctx.bot.wait_for("message", timeout=30, check=chk)
+
+                if not channel_message.channel_mentions:
+                    await ctx.send("Walang valid channel mention. Pakimention ang channel like `#general`.")
+                    return
+
+                chnl = channel_message.channel_mentions[0]
+                await chnl.send(embed=embed)
+
+                success_embed = discord.Embed(
+                    title=f"{emojis.TICK} Success",
+                    description="Sent the embed message to the mentioned channel",
+                    color=0x000000
+                )
+                await ctx.send(embed=success_embed)
+
             except asyncio.TimeoutError:
                 await ctx.send("Timed Out")
 
-        async def delete_callback(interaction):
+        async def delete_callback(interaction: discord.Interaction):
             if interaction.user.id != interaction_user.id:
-                await interaction.response.send_message("Uh oh! That message doesn't belong to you.\nYou must run this command to interact with it.", ephemeral=True)
+                await interaction.response.send_message(
+                    "Uh oh! That message doesn't belong to you.\nYou must run this command to interact with it.",
+                    ephemeral=True
+                )
                 return
-            await interaction.response.defer()
-            await msg.delete()
 
-        button_send = Button(label="Send Embed",  emoji=f"{emojis.TICK}", style=discord.ButtonStyle.success)
+            await interaction.response.defer()
+
+            if msg:
+                await msg.delete()
+
+        button_send = Button(
+            label="Send Embed",
+            emoji=f"{emojis.TICK}",
+            style=discord.ButtonStyle.success,
+            row=1
+        )
         button_send.callback = send_callback
 
-        button_delete = Button(label="Cancel Setup",  emoji=f"{emojis.CROSSICON}", style=discord.ButtonStyle.danger)
+        button_delete = Button(
+            label="Cancel Setup",
+            emoji=f"{emojis.CROSSICON}",
+            style=discord.ButtonStyle.danger,
+            row=1
+        )
         button_delete.callback = delete_callback
 
         view = View(timeout=180)
@@ -194,9 +256,11 @@ class Embed(commands.Cog):
         view.add_item(button_send)
         view.add_item(button_delete)
 
-        msg = await ctx.send(view = embed_to_view(embed, view = view), content=msgx, )
-        ctx.message = msg
+        msg = await ctx.send(content=msgx, embed=embed, view=view)
 
+
+async def setup(bot):
+    await bot.add_cog(Embed(bot))
 
 
 """
