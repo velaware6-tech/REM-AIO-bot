@@ -1,9 +1,9 @@
 from utils import emojis
 
+import asyncio
 import discord
 from discord.ext import commands
 from discord.ui import LayoutView, Select, Button
-import asyncio
 
 from utils.Tools import *
 from utils.cv2_compat import embed_to_view
@@ -20,12 +20,12 @@ class Embed(commands.Cog):
     @commands.cooldown(1, 7, commands.BucketType.user)
     @commands.has_permissions(manage_messages=True)
     async def _embed(self, ctx: commands.Context):
-        msgx = "Example embed. You can customize everything.\n*Respond within 30 seconds to avoid timeout.*"
-
         embed = discord.Embed(
             title="Edit your Embed!",
             description=(
-                "- Select what you want to edit from the menu below.\n\n"
+                "Example embed. You can customize everything.\n"
+                "*Respond within 30 seconds to avoid timeout.*\n\n"
+                "Select what you want to edit from the menu below.\n\n"
                 "You should edit the embed title and description to remove these instructions."
             ),
             color=0x000000,
@@ -33,6 +33,7 @@ class Embed(commands.Cog):
 
         interaction_user = ctx.author
         msg = None
+        editor_view = LayoutView(timeout=180)
 
         def chk(m: discord.Message):
             return (
@@ -41,12 +42,9 @@ class Embed(commands.Cog):
                 and not m.author.bot
             )
 
-        editor_view = LayoutView(timeout=180)
-
         async def refresh_message():
             if msg:
                 await msg.edit(
-                    content=msgx,
                     view=embed_to_view(embed, view=editor_view),
                 )
 
@@ -267,7 +265,6 @@ class Embed(commands.Cog):
         editor_view.add_item(button_delete)
 
         msg = await ctx.send(
-            content=msgx,
             view=embed_to_view(embed, view=editor_view),
         )
 
